@@ -1,11 +1,11 @@
 {
   "dodges": {
-    "left": 616,
-    "right": 641,
-    "up": 268,
-    "down": 286
+    "left": 1056,
+    "right": 1066,
+    "up": 581,
+    "down": 845
   },
   "hits_taken": 8,
-  "survival_time": 45.1719999999992,
+  "survival_time": 69.20600000000056,
   "preferred_direction": "right"
 }

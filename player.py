@@ -52,7 +52,7 @@ class Player:
         self.hits_taken = 0
         self.shots_fired = 0
         
-    def update(self, dt, keys):
+    def update(self, dt, keys, can_shoot=True):
         dx = 0
         dy = 0
         
@@ -80,9 +80,9 @@ class Player:
                 self.invulnerable = False
                 self.invuln_timer = 0
         
-        # Sistema de disparo (Z o ESPACIO)
+        # Sistema de disparo (solo si can_shoot es True)
         self.shoot_cooldown = max(0, self.shoot_cooldown - dt)
-        if (keys[pygame.K_z] or keys[pygame.K_SPACE]) and self.shoot_cooldown <= 0:
+        if can_shoot and (keys[pygame.K_z] or keys[pygame.K_SPACE]) and self.shoot_cooldown <= 0:
             self.shoot()
             self.shoot_cooldown = PLAYER_SHOOT_COOLDOWN
         
@@ -91,6 +91,10 @@ class Player:
             bullet.update(dt)
             if not bullet.active:
                 self.bullets.remove(bullet)
+    
+    def clear_bullets(self):
+        """Elimina todas las balas del jugador"""
+        self.bullets.clear()
     
     def shoot(self):
         """Dispara hacia arriba (hacia el boss)"""

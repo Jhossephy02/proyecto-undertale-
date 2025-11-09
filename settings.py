@@ -22,41 +22,79 @@ BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 PURPLE = (200, 0, 200)
 CYAN = (0, 255, 255)
+ORANGE = (255, 165, 0)
 
 # Player
 PLAYER_SIZE = 20
 PLAYER_SPEED = 5
 PLAYER_HP = 100
-PLAYER_SHOOT_COOLDOWN = 0.3  # Tiempo entre disparos
+PLAYER_SHOOT_COOLDOWN = 0.3
+
+# Sistema de Turnos (como Undertale)
+ATTACK_PHASE_DURATION = 3.0  # 3 segundos para atacar
+DODGE_PHASE_DURATION = 5.0   # 5 segundos para esquivar
+PHASE_TRANSITION_TIME = 1.0   # 1 segundo de transición
 
 # Boss
-BOSS_HP = 500
+BOSS_HP = 300  # Reducido para que sea más rápido
 BOSS_STATES = {
     "tranquilo": {
+        "hp_range": (0.66, 1.0),  # 66%-100% HP
         "speed_mult": 0.7, 
         "attack_mult": 1.0, 
         "color": GREEN,
-        "sprite": "assets/boss/boos_tranki.png"
+        "sprite": "assets/boss/boos_tranki.png",
+        "dialogue": ["Facilito causa 😏", "Muévete ps", "Ta' suave"]
     },
     "furioso": {
+        "hp_range": (0.33, 0.66),  # 33%-66% HP
         "speed_mult": 1.2, 
         "attack_mult": 1.5, 
         "color": YELLOW,
-        "sprite": "assets/boss/boos_furioso.png"
+        "sprite": "assets/boss/boos_furioso.png",
+        "dialogue": ["¡Ya me picaste! 😤", "¡Ahora sí!", "¡Te agarro!"]
     },
     "enajenado": {
+        "hp_range": (0.0, 0.33),  # 0%-33% HP
         "speed_mult": 1.8, 
-        "attack_mult": 2.5, 
+        "attack_mult": 2.0, 
         "color": RED,
-        "sprite": "assets/boss/boos_enojado.png"
+        "sprite": "assets/boss/boos_enojado.png",
+        "dialogue": ["¡TE QUIEBRO! 💀", "¡MUERE! 🔥", "¡YA FUE!"]
     }
 }
+
+# Lista de bosses progresivos
+BOSS_LIST = [
+    {
+        "name": "Boss Selva 1",
+        "hp": 300,
+        "folder": "boss",  # assets/boss/
+        "intro": "¡Apareció el guardián de la selva!"
+    },
+    {
+        "name": "Boss Selva 2",
+        "hp": 400,
+        "folder": "boss2",  # assets/boss2/ (futuro)
+        "intro": "¡Un enemigo más poderoso aparece!"
+    },
+    {
+        "name": "Boss Selva 3",
+        "hp": 500,
+        "folder": "boss3",  # assets/boss3/ (futuro)
+        "intro": "¡El jefe final te desafía!"
+    }
+]
 
 # Ataques
 BULLET_BASE_SPEED = 3
 BULLET_SIZE = 8
 PLAYER_BULLET_SPEED = 8
 PLAYER_BULLET_DAMAGE = 20
+
+# Aceleración progresiva del juego
+SPEED_INCREASE_PER_BOSS = 0.15  # 15% más rápido por cada boss
+SPEED_INCREASE_PER_30_SEC = 0.05  # 5% más rápido cada 30 segundos
 
 # Assets paths
 ATTACK_SPRITES = {

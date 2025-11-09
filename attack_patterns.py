@@ -62,12 +62,15 @@ class Bullet:
             self.sprite = pygame.transform.rotate(self.original_sprite, angle_degrees)
             self.size = max(self.sprite.get_width(), self.sprite.get_height()) // 2
         
-    def update(self, dt):
+    def update(self, dt, speed_multiplier=1.0):
         self.lifetime += dt
         
+        # Aplicar multiplicador de velocidad
+        actual_speed = self.speed * speed_multiplier
+        
         # Movimiento básico
-        self.x += math.cos(self.angle) * self.speed
-        self.y += math.sin(self.angle) * self.speed
+        self.x += math.cos(self.angle) * actual_speed
+        self.y += math.sin(self.angle) * actual_speed
         
         # Comportamientos especiales
         if self.bullet_type == "homing":
