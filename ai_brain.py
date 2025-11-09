@@ -28,13 +28,6 @@ class AIBrain:
                 with open(self.behavior_file, 'r') as f:
                     data = json.load(f)
                     if data:
-                        # Asegurar que todos los campos nuevos existan
-                        if "movement_history" not in data:
-                            data["movement_history"] = []
-                        if "dodge_patterns" not in data:
-                            data["dodge_patterns"] = {}
-                        if "reaction_time" not in data:
-                            data["reaction_time"] = 0.5
                         self.player_data = data
             except:
                 pass

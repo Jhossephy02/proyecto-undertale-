@@ -1,7 +1,8 @@
-# player.py - Lógica del jugador con disparos
+# player.py - Lógica del jugador con disparos (ROCA)
 
 import pygame
 import math
+import os
 from settings import *
 from utils import clamp
 
@@ -11,10 +12,23 @@ class PlayerBullet:
         self.y = y
         self.angle = angle
         self.speed = PLAYER_BULLET_SPEED
-        self.size = 6
+        self.size = 12
         self.color = CYAN
         self.active = True
         self.damage = PLAYER_BULLET_DAMAGE
+        
+        # Cargar sprite de roca
+        self.sprite = None
+        self.load_sprite()
+        
+    def load_sprite(self):
+        """Carga el sprite de la roca"""
+        if os.path.exists(PLAYER_SPRITE):
+            try:
+                img = pygame.image.load(PLAYER_SPRITE).convert_alpha()
+                self.sprite = pygame.transform.scale(img, (24, 24))
+            except:
+                print(f"Error cargando sprite: {PLAYER_SPRITE}")
         
     def update(self, dt):
         self.x += math.cos(self.angle) * self.speed
@@ -25,7 +39,12 @@ class PlayerBullet:
             self.active = False
     
     def draw(self, screen):
-        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.size)
+        if self.sprite:
+            sprite_rect = self.sprite.get_rect(center=(int(self.x), int(self.y)))
+            screen.blit(self.sprite, sprite_rect)
+        else:
+            # Fallback: círculo gris (roca)
+            pygame.draw.circle(screen, (128, 128, 128), (int(self.x), int(self.y)), self.size)
     
     def get_rect(self):
         return pygame.Rect(self.x - self.size, self.y - self.size, 
@@ -97,7 +116,7 @@ class Player:
         self.bullets.clear()
     
     def shoot(self):
-        """Dispara hacia arriba (hacia el boss)"""
+        """Dispara ROCA hacia arriba (hacia el boss)"""
         center_x = self.x + self.size // 2
         center_y = self.y + self.size // 2
         angle = -math.pi / 2  # Hacia arriba
@@ -132,7 +151,7 @@ class Player:
             (self.x + self.size, self.y + self.size // 2)
         ])
         
-        # Dibujar balas del jugador
+        # Dibujar balas del jugador (rocas)
         for bullet in self.bullets:
             bullet.draw(screen)
     

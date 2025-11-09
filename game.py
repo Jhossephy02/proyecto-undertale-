@@ -60,6 +60,7 @@ class Game:
         self.ultimate_cooldown = 0
         self.last_bullet_count = 0
         self.dodges_count = 0
+        self.score_timer = 0  # Para score gradual
     
     def create_boss(self, index):
         """Crea un boss según el índice"""

@@ -32,7 +32,7 @@ PLAYER_SHOOT_COOLDOWN = 0.3
 
 # Sistema de Turnos (como Undertale)
 ATTACK_PHASE_DURATION = 3.0  # 3 segundos para atacar
-DODGE_PHASE_DURATION = 7.0   # 7 segundos para esquivar (más tiempo)
+DODGE_PHASE_DURATION = 20.0  # 20 segundos para esquivar
 PHASE_TRANSITION_TIME = 1.0   # 1 segundo de transición
 
 # Boss
@@ -106,6 +106,9 @@ ATTACK_SPRITES = {
     "tronco": "assets/attacks/tronco.png",
     "veneno": "assets/attacks/veneno.png"
 }
+
+# Sprite del jugador
+PLAYER_SPRITE = "assets/attacks/rock.png"  # Roca como proyectil
 
 # IA
 AI_ANALYSIS_INTERVAL = 3.0
