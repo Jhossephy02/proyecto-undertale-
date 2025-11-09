@@ -1,4 +1,4 @@
-# boss.py - Lógica del jefe con sprites, daño y estado según HP
+# boss.py - Lógica del jefe con ataques múltiples y rápidos
 
 import pygame
 import random
@@ -25,7 +25,7 @@ class Boss:
         # Sistema de combate
         self.bullets = []
         self.attack_timer = 0
-        self.attack_cooldown = 2.0
+        self.attack_cooldown = 1.2  # Ataques más frecuentes
         self.rotation = 0
         
         # Efectos visuales
@@ -38,10 +38,8 @@ class Boss:
     def load_sprites(self):
         """Carga los sprites del boss desde su carpeta"""
         for state, config in BOSS_STATES.items():
-            # Intentar cargar desde la carpeta específica del boss
             sprite_path = f"assets/{self.folder}/boos_{state[0]}.png"
             
-            # Fallback a la carpeta general
             if not os.path.exists(sprite_path):
                 sprite_path = config["sprite"]
             
@@ -62,7 +60,6 @@ class Boss:
         self.hit_flash = 0.2
         self.shake_offset = [random.randint(-5, 5), random.randint(-5, 5)]
         
-        # Actualizar estado según HP
         self.update_state_by_hp()
         
         if self.hp <= 0:
@@ -101,7 +98,7 @@ class Boss:
             if not bullet.active:
                 self.bullets.remove(bullet)
             elif bullet.get_rect().colliderect(player.get_rect()):
-                if player.take_damage(10):
+                if player.take_damage(BOSS_DAMAGE):
                     pass
                 bullet.active = False
                 if bullet in self.bullets:
@@ -119,42 +116,51 @@ class Boss:
             self.dialogue_timer -= dt
     
     def attack(self, player, speed_multiplier=1.0):
-        """Genera patrones de ataque según el estado usando sprites específicos"""
+        """Genera patrones de ataque múltiples y no predecibles"""
         state_config = BOSS_STATES[self.state]
         base_speed = BULLET_BASE_SPEED * state_config["speed_mult"] * speed_multiplier
         color = state_config["color"]
         
-        # Obtener predicción
+        # Obtener predicción mejorada de la IA
         pred_x, pred_y = self.ai.get_predicted_position(player.x, player.y)
         
         if self.state == "tranquilo":
-            # Ataques básicos - Solo 1 o 2 patrones simples
+            # 2-3 patrones simultáneos
+            num_patterns = random.randint(2, 3)
             patterns = [
-                AttackPattern.circle_burst(self.x, self.y, 8, base_speed, color),
-                AttackPattern.aimed_shot(self.x, self.y, player.x, player.y, base_speed, color),
+                AttackPattern.circle_burst(self.x, self.y, 10, base_speed, color),
+                AttackPattern.aimed_shot(self.x, self.y, pred_x, pred_y, base_speed * 1.2, color),
+                AttackPattern.wave_attack(ARENA_X, ARENA_Y, base_speed, color),
             ]
-            pattern = random.choice(patterns)
             
         elif self.state == "furioso":
-            # Ataques medios - 1 patrón más complejo
+            # 3-4 patrones simultáneos
+            num_patterns = random.randint(3, 4)
             patterns = [
-                AttackPattern.spiral(self.x, self.y, 12, base_speed, self.rotation, color),
-                AttackPattern.wave_attack(ARENA_X, ARENA_Y, base_speed, color),
+                AttackPattern.spiral(self.x, self.y, 15, base_speed, self.rotation, color),
+                AttackPattern.double_burst(self.x, self.y, 12, base_speed, color),
                 AttackPattern.triple_aimed_shot(self.x, self.y, pred_x, pred_y, base_speed, color),
+                AttackPattern.snake_wave(ARENA_X, ARENA_Y, base_speed, color),
+                AttackPattern.pirana_circle(self.x, self.y, 12, base_speed * 0.9, color),
             ]
-            pattern = random.choice(patterns)
             
         else:  # enajenado
-            # Ataques extremos - 1 patrón muy complejo
+            # 4-5 patrones simultáneos (caos total)
+            num_patterns = random.randint(4, 5)
             patterns = [
-                AttackPattern.spiral_double(self.x, self.y, 15, base_speed, self.rotation, color),
-                AttackPattern.random_spray(self.x, self.y, 25, base_speed, color),
+                AttackPattern.spiral_double(self.x, self.y, 20, base_speed, self.rotation, color),
+                AttackPattern.random_spray(self.x, self.y, 30, base_speed, color),
                 AttackPattern.laser_grid(ARENA_X, ARENA_Y, base_speed, color),
                 AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, base_speed, color),
+                AttackPattern.liana_curtain(ARENA_X, ARENA_Y - 50, base_speed, color),
+                AttackPattern.converging_attack(pred_x, pred_y, base_speed * 1.3, color),
             ]
-            pattern = random.choice(patterns)
         
-        self.bullets.extend(pattern)
+        # Seleccionar patrones aleatorios sin repetir
+        selected_patterns = random.sample(patterns, min(num_patterns, len(patterns)))
+        
+        for pattern in selected_patterns:
+            self.bullets.extend(pattern)
     
     def show_dialogue(self):
         """Muestra un diálogo según el estado"""
@@ -163,7 +169,7 @@ class Boss:
         self.dialogue_timer = 2.0
     
     def clear_bullets(self):
-        """Elimina todas las balas (usado en transición de fases)"""
+        """Elimina todas las balas"""
         self.bullets.clear()
     
     def draw(self, screen, game_phase):

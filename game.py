@@ -51,8 +51,15 @@ class Game:
         
         # Mensaje de transición
         self.transition_message = ""
-        self.show_phase_message = True
+        self.show_phase_message = False
         self.phase_message_timer = 0
+        
+        # Sistema de score y ultimate
+        self.score = 0
+        self.ultimate_ready = False
+        self.ultimate_cooldown = 0
+        self.last_bullet_count = 0
+        self.dodges_count = 0
     
     def create_boss(self, index):
         """Crea un boss según el índice"""
@@ -64,8 +71,9 @@ class Game:
     
     def calculate_speed_multiplier(self):
         """Calcula el multiplicador de velocidad basado en tiempo y bosses derrotados"""
-        time_multiplier = 1.0 + (self.total_time // 30) * SPEED_INCREASE_PER_30_SEC
-        boss_multiplier = 1.0 + self.stats["bosses_defeated"] * SPEED_INCREASE_PER_BOSS
+        # Aumenta 10% cada 20 segundos + 20% por boss
+        time_multiplier = 1.0 + (self.total_time // 20) * 0.10
+        boss_multiplier = 1.0 + self.stats["bosses_defeated"] * 0.20
         return time_multiplier * boss_multiplier
     
     def next_boss(self):
@@ -128,6 +136,10 @@ class Game:
         if self.phase_message_timer > 0:
             self.phase_message_timer -= dt
         
+        # Actualizar cooldown de ultimate
+        if self.ultimate_cooldown > 0:
+            self.ultimate_cooldown -= dt
+        
         # Sistema de fases
         self.phase_timer += dt
         
@@ -137,8 +149,6 @@ class Game:
                 self.game_phase = "ATTACK"
                 self.phase_timer = 0
                 self.phase_duration = ATTACK_PHASE_DURATION
-                self.show_phase_message = True
-                self.phase_message_timer = 2.0
         
         elif self.game_phase == "ATTACK":
             # FASE DE ATAQUE: Jugador puede disparar, boss no ataca
@@ -161,34 +171,47 @@ class Game:
             if damage_to_boss > 0:
                 self.stats["damage_dealt"] += damage_to_boss
             
+            # Ultimate con X (si está lista y no en cooldown)
+            if keys[pygame.K_x] and self.score >= 200 and self.ultimate_cooldown <= 0:
+                self.activate_ultimate()
+            
             # Cambiar a fase DODGE después de 3 segundos
             if self.phase_timer >= self.phase_duration:
                 self.game_phase = "DODGE"
                 self.phase_timer = 0
                 self.phase_duration = DODGE_PHASE_DURATION
-                self.player.clear_bullets()  # Limpiar balas del jugador
-                self.show_phase_message = True
-                self.phase_message_timer = 2.0
+                self.player.clear_bullets()
+                self.last_bullet_count = len(self.boss.bullets)
         
         elif self.game_phase == "DODGE":
             # FASE DE ESQUIVA: Boss ataca, jugador no puede disparar
             prev_player_hp = self.player.hp
+            prev_bullet_count = len(self.boss.bullets)
             
             self.player.update(dt, keys, can_shoot=False)
             self.boss.update(dt, self.player, self.game_phase, self.speed_multiplier)
+            
+            # Sistema de score por esquiva
+            current_bullet_count = len(self.boss.bullets)
+            bullets_dodged = prev_bullet_count - current_bullet_count
+            if bullets_dodged > 0 and prev_player_hp == self.player.hp:
+                # Solo dar puntos si esquivó (no recibió daño)
+                self.score += bullets_dodged * 2
+                self.dodges_count += bullets_dodged
             
             damage_to_player = prev_player_hp - self.player.hp
             if damage_to_player > 0:
                 self.stats["damage_taken"] += damage_to_player
             
-            # Cambiar a fase ATTACK después de 5 segundos
+            # Cambiar a fase ATTACK después de 7 segundos
             if self.phase_timer >= self.phase_duration:
                 self.game_phase = "ATTACK"
                 self.phase_timer = 0
                 self.phase_duration = ATTACK_PHASE_DURATION
-                self.boss.clear_bullets()  # Limpiar balas del boss
-                self.show_phase_message = True
-                self.phase_message_timer = 2.0
+                self.boss.clear_bullets()
+                
+                # Analizar patrones del jugador para la IA
+                self.ai_brain.analyze_movement_pattern(self.player, self.total_time)
         
         # Análisis de IA
         self.ai_analysis_timer += dt
@@ -207,15 +230,25 @@ class Game:
                 hits = int(self.stats["damage_dealt"] / PLAYER_BULLET_DAMAGE)
                 self.stats["accuracy"] = (hits / self.player.shots_fired) * 100
     
+    def activate_ultimate(self):
+        """Activa la ultimate del jugador"""
+        ultimate_damage = int(self.boss.max_hp * 0.5)
+        self.boss.take_damage(ultimate_damage)
+        self.score -= 200
+        self.ultimate_cooldown = 5.0
+        
+        if self.boss.hp <= 0:
+            self.next_boss()
+    
     def draw(self):
         self.screen.fill(BLACK)
         
         # Arena
         arena_color = WHITE
         if self.game_phase == "ATTACK":
-            arena_color = CYAN  # Azul cuando puedes atacar
+            arena_color = CYAN
         elif self.game_phase == "DODGE":
-            arena_color = RED  # Rojo cuando debes esquivar
+            arena_color = RED
         
         pygame.draw.rect(self.screen, arena_color, 
                         (ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT), 3)
@@ -226,10 +259,6 @@ class Game:
         
         # UI
         self.draw_ui()
-        
-        # Mensajes de fase
-        if self.phase_message_timer > 0:
-            self.draw_phase_message()
         
         # Mensaje de transición
         if self.game_phase == "TRANSITION":
@@ -264,11 +293,35 @@ class Game:
         hp_color = GREEN if hp_percent > 0.5 else (YELLOW if hp_percent > 0.25 else RED)
         pygame.draw.rect(self.screen, hp_color, (bar_x, bar_y, hp_bar_width, bar_height))
         
-        # Timer de fase
+        # Score y Ultimate
+        score_text = font.render(f"SCORE: {self.score}", True, YELLOW)
+        self.screen.blit(score_text, (20, 80))
+        
+        # Indicador de Ultimate
+        if self.score >= 200 and self.ultimate_cooldown <= 0:
+            ult_text = font.render("ULTIMATE LISTA! (X)", True, PURPLE)
+            self.screen.blit(ult_text, (20, 115))
+            
+            if int(self.total_time * 5) % 2 == 0:
+                pygame.draw.rect(self.screen, PURPLE, (15, 110, 300, 35), 3)
+        elif self.ultimate_cooldown > 0:
+            cd_text = small_font.render(f"Ultimate: {int(self.ultimate_cooldown)}s", True, (150, 150, 150))
+            self.screen.blit(cd_text, (20, 115))
+        else:
+            progress_text = small_font.render(f"Ultimate: {self.score}/200", True, (200, 200, 200))
+            self.screen.blit(progress_text, (20, 115))
+        
+        # Timer de fase (esquina inferior izquierda)
         time_left = self.phase_duration - self.phase_timer
-        phase_color = CYAN if self.game_phase == "ATTACK" else (RED if self.game_phase == "DODGE" else WHITE)
-        timer_text = small_font.render(f"Tiempo: {int(time_left)}s", True, phase_color)
-        self.screen.blit(timer_text, (20, HEIGHT - 30))
+        phase_name = "ATAQUE" if self.game_phase == "ATTACK" else "ESQUIVA"
+        phase_color = CYAN if self.game_phase == "ATTACK" else RED
+        
+        timer_bg = pygame.Rect(15, HEIGHT - 50, 120, 35)
+        pygame.draw.rect(self.screen, BLACK, timer_bg)
+        pygame.draw.rect(self.screen, phase_color, timer_bg, 2)
+        
+        timer_text = small_font.render(f"{phase_name}: {int(time_left)}s", True, phase_color)
+        self.screen.blit(timer_text, (20, HEIGHT - 45))
         
         # Velocidad del juego
         speed_text = small_font.render(f"Velocidad: {self.speed_multiplier:.1f}x", True, ORANGE)
@@ -277,33 +330,6 @@ class Game:
         # Bosses derrotados
         bosses_text = small_font.render(f"Bosses: {self.stats['bosses_defeated']}", True, YELLOW)
         self.screen.blit(bosses_text, (WIDTH - 140, 20))
-    
-    def draw_phase_message(self):
-        """Dibuja el mensaje de cambio de fase"""
-        font = pygame.font.Font(None, 72)
-        
-        if self.game_phase == "ATTACK":
-            text = font.render("¡ATACA!", True, CYAN)
-            sub_font = pygame.font.Font(None, 36)
-            sub_text = sub_font.render("Dispara con Z o ESPACIO", True, WHITE)
-        elif self.game_phase == "DODGE":
-            text = font.render("¡ESQUIVA!", True, RED)
-            sub_font = pygame.font.Font(None, 36)
-            sub_text = sub_font.render("Evita las balas", True, WHITE)
-        else:
-            return
-        
-        # Fondo semi-transparente
-        overlay = pygame.Surface((WIDTH, 200))
-        overlay.set_alpha(180)
-        overlay.fill(BLACK)
-        self.screen.blit(overlay, (0, HEIGHT // 2 - 100))
-        
-        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
-        sub_rect = sub_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40))
-        
-        self.screen.blit(text, text_rect)
-        self.screen.blit(sub_text, sub_rect)
     
     def draw_transition_message(self):
         """Dibuja mensaje de transición entre bosses"""
@@ -350,10 +376,11 @@ class Game:
         y_offset += 50
         stats_texts = [
             f"Tiempo total: {int(self.stats['time'])} segundos",
+            f"Score final: {self.score}",
             f"Bosses derrotados: {self.stats['bosses_defeated']}",
+            f"Balas esquivadas: {self.dodges_count}",
             f"Daño infligido: {int(self.stats['damage_dealt'])}",
             f"Daño recibido: {int(self.stats['damage_taken'])}",
-            f"Disparos: {self.player.shots_fired}",
             f"Velocidad final: {self.speed_multiplier:.1f}x"
         ]
         
