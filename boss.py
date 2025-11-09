@@ -25,7 +25,7 @@ class Boss:
         # Sistema de combate
         self.bullets = []
         self.attack_timer = 0
-        self.attack_cooldown = 1.2  # Ataques más frecuentes
+        self.attack_cooldown = 1.8  # Más tiempo entre ataques (balanceado)
         self.rotation = 0
         
         # Efectos visuales
@@ -125,35 +125,34 @@ class Boss:
         pred_x, pred_y = self.ai.get_predicted_position(player.x, player.y)
         
         if self.state == "tranquilo":
-            # 2-3 patrones simultáneos
-            num_patterns = random.randint(2, 3)
+            # 1-2 patrones simultáneos (más manejable)
+            num_patterns = random.randint(1, 2)
             patterns = [
-                AttackPattern.circle_burst(self.x, self.y, 10, base_speed, color),
+                AttackPattern.circle_burst(self.x, self.y, 8, base_speed, color),
                 AttackPattern.aimed_shot(self.x, self.y, pred_x, pred_y, base_speed * 1.2, color),
-                AttackPattern.wave_attack(ARENA_X, ARENA_Y, base_speed, color),
+                AttackPattern.cross_pattern(self.x, self.y, base_speed, color),
             ]
             
         elif self.state == "furioso":
-            # 3-4 patrones simultáneos
-            num_patterns = random.randint(3, 4)
+            # 2-3 patrones simultáneos
+            num_patterns = random.randint(2, 3)
             patterns = [
-                AttackPattern.spiral(self.x, self.y, 15, base_speed, self.rotation, color),
-                AttackPattern.double_burst(self.x, self.y, 12, base_speed, color),
+                AttackPattern.spiral(self.x, self.y, 12, base_speed, self.rotation, color),
+                AttackPattern.double_burst(self.x, self.y, 10, base_speed, color),
                 AttackPattern.triple_aimed_shot(self.x, self.y, pred_x, pred_y, base_speed, color),
                 AttackPattern.snake_wave(ARENA_X, ARENA_Y, base_speed, color),
-                AttackPattern.pirana_circle(self.x, self.y, 12, base_speed * 0.9, color),
+                AttackPattern.pirana_circle(self.x, self.y, 10, base_speed * 0.9, color),
             ]
             
         else:  # enajenado
-            # 4-5 patrones simultáneos (caos total)
-            num_patterns = random.randint(4, 5)
+            # 3-4 patrones simultáneos (caos controlado)
+            num_patterns = random.randint(3, 4)
             patterns = [
-                AttackPattern.spiral_double(self.x, self.y, 20, base_speed, self.rotation, color),
-                AttackPattern.random_spray(self.x, self.y, 30, base_speed, color),
-                AttackPattern.laser_grid(ARENA_X, ARENA_Y, base_speed, color),
-                AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, base_speed, color),
-                AttackPattern.liana_curtain(ARENA_X, ARENA_Y - 50, base_speed, color),
-                AttackPattern.converging_attack(pred_x, pred_y, base_speed * 1.3, color),
+                AttackPattern.spiral_double(self.x, self.y, 15, base_speed, self.rotation, color),
+                AttackPattern.random_spray(self.x, self.y, 25, base_speed, color),
+                AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, base_speed * 0.8, color),
+                AttackPattern.converging_attack(pred_x, pred_y, base_speed * 1.2, color),
+                AttackPattern.cross_pattern(self.x, self.y, base_speed * 1.3, color),
             ]
         
         # Seleccionar patrones aleatorios sin repetir
