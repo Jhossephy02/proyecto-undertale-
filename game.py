@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # game.py - Loop principal con sistema de turnos
-=======
-# game.py - Loop principal con sistema de 3 fases
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 import pygame
 import sys
@@ -17,11 +13,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-<<<<<<< HEAD
         pygame.display.set_caption("BOSS FIGHT - Sistema de Turnos Undertale")
-=======
-        pygame.display.set_caption("BOSS FIGHT - Sistema de 3 Fases")
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.clock = pygame.time.Clock()
         self.running = True
         
@@ -29,7 +21,6 @@ class Game:
         self.sound_manager = SoundManager()
         self.ai_brain = AIBrain()
         
-<<<<<<< HEAD
         # Sistema de fases
         self.game_phase = "ATTACK"  # ATTACK, DODGE, TRANSITION
         self.phase_timer = 0
@@ -43,24 +34,11 @@ class Game:
         # Crear jugador y primer boss
         self.player = Player(ARENA_X + ARENA_WIDTH // 2, ARENA_Y + ARENA_HEIGHT // 2)
         self.boss = self.create_boss(self.current_boss_index)
-=======
-        # Jugador
-        self.player = Player(ARENA_X + ARENA_WIDTH // 2, ARENA_Y + ARENA_HEIGHT // 2)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
-        # Sistema de bosses
-        self.current_phase = 1
-        self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase)
-        self.revived_bosses = []  # Bosses revividos en fase 3
-        
-        # Timers y estados
         self.game_time = 0
         self.ai_analysis_timer = 0
         self.game_over = False
         self.victory = False
-        self.phase_transition = False
-        self.transition_timer = 0
-        self.transition_duration = 3.0
         
         # Estadísticas
         self.stats = {
@@ -68,12 +46,7 @@ class Game:
             "damage_taken": 0,
             "accuracy": 0,
             "time": 0,
-<<<<<<< HEAD
             "bosses_defeated": 0
-=======
-            "phases_completed": 0,
-            "special_attacks_used": 0
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         }
         
         # Mensaje de transición
@@ -136,13 +109,8 @@ class Game:
             self.total_time += dt
             
             self.handle_events()
-            
             if not self.game_over:
-                if not self.phase_transition:
-                    self.update(dt)
-                else:
-                    self.update_transition(dt)
-            
+                self.update(dt)
             self.draw()
         
         pygame.quit()
@@ -162,7 +130,6 @@ class Game:
         self.input_handler.update()
         keys = self.input_handler.get_keys()
         
-<<<<<<< HEAD
         # Calcular multiplicador de velocidad
         self.speed_multiplier = self.calculate_speed_multiplier()
         
@@ -248,40 +215,11 @@ class Game:
                 self.ai_brain.analyze_movement_pattern(self.player, self.total_time)
         
         # Análisis de IA
-=======
-        # Guardar HP para estadísticas
-        prev_boss_hp = self.boss.hp
-        prev_player_hp = self.player.hp
-        
-        # Actualizar jugador
-        self.player.update(dt, keys)
-        
-        # Actualizar boss principal
-        self.boss.update(dt, self.player)
-        
-        # Actualizar bosses revividos (fase 3)
-        for revived_boss in self.revived_bosses[:]:
-            revived_boss.update(dt, self.player)
-            if revived_boss.hp <= 0:
-                self.revived_bosses.remove(revived_boss)
-                print(f"Boss Fase {revived_boss.phase} eliminado")
-        
-        # Estadísticas
-        damage_to_boss = prev_boss_hp - self.boss.hp
-        damage_to_player = prev_player_hp - self.player.hp
-        if damage_to_boss > 0:
-            self.stats["damage_dealt"] += damage_to_boss
-        if damage_to_player > 0:
-            self.stats["damage_taken"] += damage_to_player
-        
-        # Análisis IA
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.ai_analysis_timer += dt
         if self.ai_analysis_timer >= AI_ANALYSIS_INTERVAL:
             self.ai_brain.analyze_player(self.player, self.game_time)
             self.ai_analysis_timer = 0
         
-<<<<<<< HEAD
         # Verificar game over
         if self.player.hp <= 0:
             self.game_over = True
@@ -292,64 +230,6 @@ class Game:
             if self.player.shots_fired > 0:
                 hits = int(self.stats["damage_dealt"] / PLAYER_BULLET_DAMAGE)
                 self.stats["accuracy"] = (hits / self.player.shots_fired) * 100
-=======
-        # Resurrección de bosses (solo fase 3)
-        if self.current_phase == 3 and self.boss.hp < self.boss.max_hp * 0.5:
-            new_bosses = self.boss.revive_previous_bosses()
-            self.revived_bosses.extend(new_bosses)
-        
-        # Verificar derrota del boss
-        if self.boss.hp <= 0:
-            if self.current_phase < 3:
-                self.start_phase_transition()
-            else:
-                # Victoria final
-                self.game_over = True
-                self.victory = True
-                self.stats["time"] = self.game_time
-                self.stats["phases_completed"] = 3
-                if self.player.shots_fired > 0:
-                    hits = int(self.stats["damage_dealt"] / PLAYER_BULLET_DAMAGE)
-                    self.stats["accuracy"] = (hits / self.player.shots_fired) * 100
-        
-        # Verificar derrota del jugador
-        if self.player.hp <= 0:
-            self.game_over = True
-            self.victory = False
-            self.stats["time"] = self.game_time
-            self.stats["phases_completed"] = self.current_phase - 1
-    
-    def start_phase_transition(self):
-        """Inicia la transición a la siguiente fase"""
-        self.phase_transition = True
-        self.transition_timer = 0
-        self.stats["phases_completed"] = self.current_phase
-        print(f"¡Fase {self.current_phase} completada! Preparando Fase {self.current_phase + 1}...")
-    
-    def update_transition(self, dt):
-        """Actualiza la transición entre fases"""
-        self.transition_timer += dt
-        
-        if self.transition_timer >= self.transition_duration:
-            self.advance_to_next_phase()
-    
-    def advance_to_next_phase(self):
-        """Avanza a la siguiente fase"""
-        self.current_phase += 1
-        self.phase_transition = False
-        self.transition_timer = 0
-        
-        # Crear nuevo boss
-        self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase)
-        
-        # Resetear jugador para la nueva fase
-        self.player.reset_for_new_phase()
-        
-        # Limpiar bosses revividos
-        self.revived_bosses.clear()
-        
-        print(f"¡FASE {self.current_phase} INICIADA!")
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
     
     def activate_ultimate(self):
         """Activa la ultimate del jugador"""
@@ -365,7 +245,6 @@ class Game:
         self.screen.fill(BLACK)
         
         # Arena
-<<<<<<< HEAD
         arena_color = WHITE
         if self.game_phase == "ATTACK":
             arena_color = CYAN
@@ -387,34 +266,13 @@ class Game:
             self.draw_transition_message()
         
         # Game over
-=======
-        pygame.draw.rect(self.screen, WHITE, 
-                        (ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT), 3)
-        
-        if not self.phase_transition:
-            # Dibujar entidades
-            self.player.draw(self.screen)
-            self.boss.draw(self.screen)
-            
-            # Dibujar bosses revividos
-            for revived_boss in self.revived_bosses:
-                revived_boss.draw(self.screen)
-            
-            # UI
-            self.draw_ui()
-        else:
-            # Pantalla de transición
-            self.draw_phase_transition()
-        
-        # Game Over
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         if self.game_over:
             self.draw_game_over()
         
         pygame.display.flip()
     
     def draw_ui(self):
-        """Dibuja la interfaz"""
+        """Dibuja la interfaz de usuario"""
         font = pygame.font.Font(None, 36)
         small_font = pygame.font.Font(None, 24)
         
@@ -422,7 +280,7 @@ class Game:
         hp_text = font.render(f"HP: {self.player.hp}/{self.player.max_hp}", True, RED)
         self.screen.blit(hp_text, (20, 20))
         
-        # Barra HP jugador
+        # Barra de HP del jugador
         bar_width = 150
         bar_height = 15
         bar_x = 20
@@ -436,7 +294,6 @@ class Game:
         hp_color = GREEN if hp_percent > 0.5 else (YELLOW if hp_percent > 0.25 else RED)
         pygame.draw.rect(self.screen, hp_color, (bar_x, bar_y, hp_bar_width, bar_height))
         
-<<<<<<< HEAD
         # Score y Ultimate
         score_text = font.render(f"SCORE: {self.score}", True, YELLOW)
         self.screen.blit(score_text, (20, 80))
@@ -480,92 +337,16 @@ class Game:
         font = pygame.font.Font(None, 48)
         text = font.render(self.transition_message, True, YELLOW)
         
-=======
-        # Estado del boss
-        phase_color = BOSS_PHASES[self.current_phase]["color"]
-        phase_text = font.render(f"FASE {self.current_phase} - {self.boss.state.upper()}", 
-                                True, phase_color)
-        self.screen.blit(phase_text, (WIDTH - 350, 20))
-        
-        # Contador de esquivos y modo ataque
-        dodges_text = small_font.render(f"Esquivos: {self.player.dodges_for_special}/{SPECIAL_ATTACK_DODGES}", 
-                                       True, CYAN if not self.player.attack_mode else GOLD)
-        self.screen.blit(dodges_text, (20, 80))
-        
-        # Indicador de modo ataque
-        if self.player.attack_mode:
-            time_left = SPECIAL_ATTACK_WINDOW - self.player.attack_mode_timer
-            mode_text = font.render(f"¡MODO ATAQUE! {int(time_left)}s", True, GOLD)
-            self.screen.blit(mode_text, (WIDTH // 2 - 150, HEIGHT - 50))
-            
-            if self.player.can_use_special:
-                special_text = small_font.render("Presiona X para PODER ESPECIAL", True, GOLD)
-                self.screen.blit(special_text, (WIDTH // 2 - 150, HEIGHT - 80))
-        
-        # Tiempo
-        time_text = small_font.render(f"Tiempo: {int(self.game_time)}s", True, WHITE)
-        self.screen.blit(time_text, (WIDTH // 2 - 50, HEIGHT - 30))
-        
-        # Instrucciones (primeros segundos)
-        if self.game_time < 5:
-            controls = small_font.render("WASD: Mover | Z: Disparar (modo ataque) | X: Especial", 
-                                       True, YELLOW)
-            self.screen.blit(controls, (WIDTH // 2 - 270, HEIGHT - 110))
-        
-        # Contador de bosses revividos
-        if len(self.revived_bosses) > 0:
-            revived_text = small_font.render(f"Bosses revividos: {len(self.revived_bosses)}", 
-                                           True, PURPLE)
-            self.screen.blit(revived_text, (WIDTH - 200, 60))
-    
-    def draw_phase_transition(self):
-        """Dibuja la pantalla de transición entre fases"""
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(200)
         overlay.fill(BLACK)
         self.screen.blit(overlay, (0, 0))
         
-<<<<<<< HEAD
         text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         self.screen.blit(text, text_rect)
     
     def draw_game_over(self):
         """Dibuja la pantalla de game over con estadísticas"""
-=======
-        font = pygame.font.Font(None, 72)
-        small_font = pygame.font.Font(None, 36)
-        
-        # Fase completada
-        completed_text = font.render(f"FASE {self.current_phase} COMPLETADA", True, GREEN)
-        self.screen.blit(completed_text, 
-                        (WIDTH // 2 - completed_text.get_width() // 2, HEIGHT // 2 - 100))
-        
-        # Siguiente fase
-        next_phase = self.current_phase + 1
-        next_text = font.render(f"PREPARANDO FASE {next_phase}...", True, 
-                              BOSS_PHASES[next_phase]["color"])
-        self.screen.blit(next_text, 
-                        (WIDTH // 2 - next_text.get_width() // 2, HEIGHT // 2))
-        
-        # Advertencia
-        if next_phase == 2:
-            warning = small_font.render("¡Mayor velocidad y daño!", True, YELLOW)
-        else:
-            warning = small_font.render("¡El boss puede revivir a los anteriores!", True, RED)
-        
-        self.screen.blit(warning, 
-                        (WIDTH // 2 - warning.get_width() // 2, HEIGHT // 2 + 80))
-        
-        # Timer
-        time_left = self.transition_duration - self.transition_timer
-        timer_text = small_font.render(f"Comenzando en: {int(time_left) + 1}", True, WHITE)
-        self.screen.blit(timer_text, 
-                        (WIDTH // 2 - timer_text.get_width() // 2, HEIGHT // 2 + 130))
-    
-    def draw_game_over(self):
-        """Dibuja pantalla de game over"""
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(200)
         overlay.fill(BLACK)
@@ -579,19 +360,11 @@ class Game:
         
         # Título
         if self.victory:
-<<<<<<< HEAD
             title = font.render("¡VICTORIA TOTAL!", True, GREEN)
             subtitle = medium_font.render("¡Derrotaste a todos los bosses! 🎉", True, WHITE)
         else:
             title = font.render("GAME OVER", True, RED)
             subtitle = medium_font.render("El boss te derrotó 💀", True, WHITE)
-=======
-            title = font.render("¡VICTORIA ÉPICA!", True, GOLD)
-            subtitle = medium_font.render("¡Derrotaste a los 3 bosses! 🎉👑", True, WHITE)
-        else:
-            title = font.render("GAME OVER", True, RED)
-            subtitle = medium_font.render(f"Llegaste a la Fase {self.current_phase} 💀", True, WHITE)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, y_offset))
         self.screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, y_offset + 80))
@@ -603,7 +376,6 @@ class Game:
         
         y_offset += 50
         stats_texts = [
-<<<<<<< HEAD
             f"Tiempo total: {int(self.stats['time'])} segundos",
             f"Score final: {self.score}",
             f"Bosses derrotados: {self.stats['bosses_defeated']}",
@@ -611,15 +383,6 @@ class Game:
             f"Daño infligido: {int(self.stats['damage_dealt'])}",
             f"Daño recibido: {int(self.stats['damage_taken'])}",
             f"Velocidad final: {self.speed_multiplier:.1f}x"
-=======
-            f"Tiempo: {int(self.stats['time'])} segundos",
-            f"Fases completadas: {self.stats['phases_completed']}/3",
-            f"Daño infligido: {int(self.stats['damage_dealt'])}",
-            f"Daño recibido: {int(self.stats['damage_taken'])}",
-            f"Disparos: {self.player.shots_fired}",
-            f"Esquivos totales: {self.player.total_dodges}",
-            f"Precisión: {int(self.stats.get('accuracy', 0))}%" if self.victory else ""
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         ]
         
         if self.victory and self.player.shots_fired > 0:
@@ -627,23 +390,14 @@ class Game:
             accuracy = (hits / self.player.shots_fired) * 100
             stats_texts.append(f"Precisión: {int(accuracy)}%")
         
-<<<<<<< HEAD
         for text in stats_texts:
             stat_surf = small_font.render(text, True, WHITE)
             self.screen.blit(stat_surf, (WIDTH // 2 - stat_surf.get_width() // 2, y_offset))
             y_offset += 35
-=======
-        # Ranking
-        if self.victory:
-            y_offset += 20
-            rank = "S" if self.stats['time'] < 180 else ("A" if self.stats['time'] < 300 else "B")
-            rank_text = font.render(f"RANGO: {rank}", True, GOLD if rank == "S" else (YELLOW if rank == "A" else GREEN))
-            self.screen.blit(rank_text, (WIDTH // 2 - rank_text.get_width() // 2, y_offset))
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
         # Reinicio
         restart = medium_font.render("Presiona R para reiniciar", True, CYAN)
-        self.screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT - 60))
+        self.screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT - 80))
 
 if __name__ == "__main__":
     game = Game()
