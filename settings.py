@@ -23,6 +23,10 @@ YELLOW = (255, 255, 0)
 PURPLE = (200, 0, 200)
 CYAN = (0, 255, 255)
 ORANGE = (255, 165, 0)
+<<<<<<< HEAD
+=======
+GOLD = (255, 215, 0)
+>>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 # Player
 PLAYER_SIZE = 20
@@ -30,10 +34,17 @@ PLAYER_SPEED = 5
 PLAYER_HP = 100
 PLAYER_SHOOT_COOLDOWN = 0.3
 
+<<<<<<< HEAD
 # Sistema de Turnos (como Undertale)
 ATTACK_PHASE_DURATION = 3.0  # 3 segundos para atacar
 DODGE_PHASE_DURATION = 20.0  # 20 segundos para esquivar
 PHASE_TRANSITION_TIME = 1.0   # 1 segundo de transición
+=======
+# Sistema de poder especial
+SPECIAL_ATTACK_DODGES = 100  # Esquivos necesarios para desbloquear ataque
+SPECIAL_ATTACK_WINDOW = 20.0  # Segundos de duración del modo ataque
+SPECIAL_ATTACK_DAMAGE = 150  # Daño del poder especial
+>>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 # Boss
 BOSS_HP = 300
@@ -65,6 +76,7 @@ BOSS_STATES = {
     }
 }
 
+<<<<<<< HEAD
 # Lista de bosses progresivos
 BOSS_LIST = [
     {
@@ -86,6 +98,33 @@ BOSS_LIST = [
         "intro": "¡El jefe final te desafía!"
     }
 ]
+=======
+# Configuración de los 3 bosses
+BOSS_PHASES = {
+    1: {
+        "name": "Boss Selvático",
+        "hp": 500,
+        "speed_base": 1.0,
+        "damage_base": 1.0,
+        "color": GREEN
+    },
+    2: {
+        "name": "Boss Furioso",
+        "hp": 600,
+        "speed_base": 1.5,
+        "damage_base": 1.5,
+        "color": ORANGE
+    },
+    3: {
+        "name": "Boss Supremo",
+        "hp": 800,
+        "speed_base": 1.3,
+        "damage_base": 1.3,
+        "color": PURPLE,
+        "can_revive": True
+    }
+}
+>>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 # Ataques
 BULLET_BASE_SPEED = 3
