@@ -22,12 +22,19 @@ BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 PURPLE = (200, 0, 200)
 CYAN = (0, 255, 255)
+ORANGE = (255, 165, 0)
+GOLD = (255, 215, 0)
 
 # Player
 PLAYER_SIZE = 20
 PLAYER_SPEED = 5
 PLAYER_HP = 100
-PLAYER_SHOOT_COOLDOWN = 0.3  # Tiempo entre disparos
+PLAYER_SHOOT_COOLDOWN = 0.3
+
+# Sistema de poder especial
+SPECIAL_ATTACK_DODGES = 100  # Esquivos necesarios para desbloquear ataque
+SPECIAL_ATTACK_WINDOW = 20.0  # Segundos de duración del modo ataque
+SPECIAL_ATTACK_DAMAGE = 150  # Daño del poder especial
 
 # Boss
 BOSS_HP = 500
@@ -49,6 +56,32 @@ BOSS_STATES = {
         "attack_mult": 2.5, 
         "color": RED,
         "sprite": "assets/boss/boos_enojado.png"
+    }
+}
+
+# Configuración de los 3 bosses
+BOSS_PHASES = {
+    1: {
+        "name": "Boss Selvático",
+        "hp": 500,
+        "speed_base": 1.0,
+        "damage_base": 1.0,
+        "color": GREEN
+    },
+    2: {
+        "name": "Boss Furioso",
+        "hp": 600,
+        "speed_base": 1.5,
+        "damage_base": 1.5,
+        "color": ORANGE
+    },
+    3: {
+        "name": "Boss Supremo",
+        "hp": 800,
+        "speed_base": 1.3,
+        "damage_base": 1.3,
+        "color": PURPLE,
+        "can_revive": True
     }
 }
 
