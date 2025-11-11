@@ -2,12 +2,16 @@
 
 import pygame
 import sys
-from settings import *
+# Importar todas las constantes y configuraciones básicas
+from settings import * # Importar componentes principales
 from player import Player
 from boss import Boss
 from ai_brain import AIBrain
 from core.input_handler import InputHandler
 from core.sound_manager import SoundManager
+# Importar componentes de UI/Menú (asumiendo que menu.py está disponible)
+from menu import MainMenu, SettingsMenu 
+
 
 class Game:
     def __init__(self):
@@ -15,19 +19,52 @@ class Game:
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("BOSS FIGHT - Sistema de 3 Fases")
         self.clock = pygame.time.Clock()
-        self.running = True
         
+        # --- NUEVOS ESTADOS DE JUEGO ---
+        self.current_state = "MENU" # Estado inicial: Menú
+        self.running = True
+        self.config = GAME_CONFIG.copy() # Copia la configuración global
+        
+        # Inicializar Menús
+        self.main_menu = MainMenu(self.screen)
+        self.settings_menu = SettingsMenu(self.screen, self.config)
+        
+        # Componentes del juego (inicializados en start_game)
+        self.player = None
+        self.boss = None
+        self.input_handler = None
+        self.sound_manager = None
+        self.ai_brain = None
+        
+        # Música
+        pygame.mixer.music.load("assets/sounds/soundtrack_undertale.mp3")
+        pygame.mixer.music.set_volume(0.1)
+        if self.config["music_enabled"]:
+            pygame.mixer.music.play(-1)
+
+    def start_game(self):
+        """Inicializa todos los componentes del juego después de la selección de menú."""
+        self.current_state = "GAME"
+        
+        # Los imports de Player, Boss, etc., ya están arriba
         self.input_handler = InputHandler()
         self.sound_manager = SoundManager()
         self.ai_brain = AIBrain()
         
-        # Jugador
-        self.player = Player(ARENA_X + ARENA_WIDTH // 2, ARENA_Y + ARENA_HEIGHT // 2)
+        # Aplicar Modificadores de Dificultad
+        mod = DIFFICULTY_MODIFIERS[self.config["difficulty"]]
         
-        # Sistema de bosses
+        # Jugador (aplicar modificador de HP)
+        base_hp = int(PLAYER_HP * mod["player_hp_mult"])
+        self.player = Player(ARENA_X + ARENA_WIDTH // 2, ARENA_Y + ARENA_HEIGHT // 2)
+        self.player.max_hp = base_hp
+        self.player.hp = base_hp
+        
+        # Boss (pasar modificador)
         self.current_phase = 1
-        self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase)
-        self.revived_bosses = []  # Bosses revividos en fase 3
+        # **NOTA: El boss debe aceptar 'difficulty_mod' en su __init__**
+        self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase, difficulty_mod=mod) 
+        self.revived_bosses = []
         
         # Timers y estados
         self.game_time = 0
@@ -37,10 +74,6 @@ class Game:
         self.phase_transition = False
         self.transition_timer = 0
         self.transition_duration = 3.0
-
-        pygame.mixer.music.load("assets/sounds/soundtrack_undertale.mp3")
-        pygame.mixer.music.set_volume(0.1)
-        pygame.mixer.music.play(-1)
         
         # Estadísticas
         self.stats = {
@@ -57,36 +90,75 @@ class Game:
         self.show_phase_message = False
         self.phase_message_timer = 0
     
+    # game.py - REEMPLAZAR Game.run
+
     def run(self):
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0
-            self.game_time += dt
             
-            self.handle_events()
+            events = pygame.event.get()
+            self.handle_common_events(events) # Manejo de salida (QUIT, ESC)
             
-            if not self.game_over:
-                if not self.phase_transition:
-                    self.update(dt)
-                else:
-                    self.update_transition(dt)
+            if self.current_state == "MENU":
+                action = self.main_menu.handle_events(events)
+                if action == "play":
+                    self.start_game()
+                elif action == "settings":
+                    self.current_state = "SETTINGS"
+                elif action == "quit":
+                    self.running = False
+                self.main_menu.draw()
             
-            self.draw()
+            elif self.current_state == "SETTINGS":
+                action = self.settings_menu.handle_events(events)
+                if action == "back":
+                    self.current_state = "MENU"
+                # Actualiza la configuración de música/sonido en tiempo real
+                if self.config["music_enabled"] and not pygame.mixer.music.get_busy():
+                    pygame.mixer.music.play(-1)
+                elif not self.config["music_enabled"] and pygame.mixer.music.get_busy():
+                    pygame.mixer.music.stop()
+
+                self.settings_menu.draw()
+            
+            elif self.current_state == "GAME":
+                self.game_time += dt
+                self.handle_events_game(events)
+            
+                if not self.game_over:
+                    if not self.phase_transition:
+                        self.update(dt)
+                    else:
+                        self.update_transition(dt)
+                
+                self.draw()
+            
+            pygame.display.flip()
         
         pygame.quit()
         sys.exit()
-    
-    def handle_events(self):
-        for event in pygame.event.get():
+
+    def handle_common_events(self, events):
+        """Maneja eventos que cierran el juego o regresan al menú."""
+        for event in events:
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.running = False
-                if event.key == pygame.K_r and self.game_over:
-                    self.__init__()
+                # La tecla ESC regresa al menú desde el juego/configuración
+                if event.key == pygame.K_ESCAPE and self.current_state != "MENU":
+                    self.current_state = "MENU"
     
-    def update(self, dt):
+    def handle_events_game(self, events):
+        """Maneja los eventos específicos cuando el juego está corriendo."""
         self.input_handler.update()
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r and self.game_over:
+                    # Reiniciar (volver a la configuración original)
+                    self.__init__()
+                    
+    def update(self, dt):
+        # El input_handler ya se actualizó en handle_events_game, solo tomamos las keys.
         keys = self.input_handler.get_keys()
         
         # Guardar HP para estadísticas
@@ -105,6 +177,13 @@ class Game:
             if revived_boss.hp <= 0:
                 self.revived_bosses.remove(revived_boss)
                 print(f"Boss Fase {revived_boss.phase} eliminado")
+
+        # --- COMBINACIÓN DE ATAQUES (NUEVO CÓDIGO) ---
+        # El boss principal asume las balas de los revividos
+        for revived_boss in self.revived_bosses:
+            self.boss.bullets.extend(revived_boss.bullets)
+            revived_boss.bullets.clear()
+        # ---------------------------------------------
         
         # Estadísticas
         damage_to_boss = prev_boss_hp - self.boss.hp
@@ -178,8 +257,11 @@ class Game:
         self.phase_transition = False
         self.transition_timer = 0
         
-        # Crear nuevo boss
-        self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase)
+        # Obtener modificadores de la dificultad seleccionada (NUEVO CÓDIGO)
+        mod = DIFFICULTY_MODIFIERS[self.config["difficulty"]]
+
+        # Crear nuevo boss (pasar el modificador de dificultad)
+        self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase, difficulty_mod=mod)
         boss_appear_sound = pygame.mixer.Sound("assets/sounds/roar_inicio_yakuruna.mp3")
         boss_appear_sound.play()
         
@@ -191,12 +273,15 @@ class Game:
         
         print(f"¡FASE {self.current_phase} INICIADA!")
     
+    # ... (Resto de los métodos draw, draw_ui, draw_phase_transition, draw_game_over) ...
+    # ... (Estos métodos de dibujo no necesitan cambios funcionales para este requerimiento)
+    
     def draw(self):
         self.screen.fill(BLACK)
         
         # Arena
         pygame.draw.rect(self.screen, WHITE, 
-                        (ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT), 3)
+                         (ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT), 3)
         
         if not self.phase_transition:
             # Dibujar entidades
@@ -217,7 +302,7 @@ class Game:
         if self.game_over:
             self.draw_game_over()
         
-        pygame.display.flip()
+        # pygame.display.flip() se movió al final de Game.run
     
     def draw_ui(self):
         """Dibuja la interfaz"""
@@ -245,7 +330,7 @@ class Game:
         # Estado del boss
         phase_color = BOSS_PHASES[self.current_phase]["color"]
         phase_text = font.render(f"FASE {self.current_phase} - {self.boss.state.upper()}", 
-                                True, phase_color)
+                                 True, phase_color)
         self.screen.blit(phase_text, (WIDTH - 350, 20))
         
         # Contador de esquivos y modo ataque
@@ -292,14 +377,14 @@ class Game:
         # Fase completada
         completed_text = font.render(f"FASE {self.current_phase} COMPLETADA", True, GREEN)
         self.screen.blit(completed_text, 
-                        (WIDTH // 2 - completed_text.get_width() // 2, HEIGHT // 2 - 100))
+                         (WIDTH // 2 - completed_text.get_width() // 2, HEIGHT // 2 - 100))
         
         # Siguiente fase
         next_phase = self.current_phase + 1
         next_text = font.render(f"PREPARANDO FASE {next_phase}...", True, 
         BOSS_PHASES[next_phase]["color"])
         self.screen.blit(next_text, 
-                        (WIDTH // 2 - next_text.get_width() // 2, HEIGHT // 2)) 
+                         (WIDTH // 2 - next_text.get_width() // 2, HEIGHT // 2)) 
         
         # Advertencia
         if next_phase == 2:
@@ -308,13 +393,13 @@ class Game:
             warning = small_font.render("¡El boss puede revivir a los anteriores!", True, RED)
         
         self.screen.blit(warning, 
-                        (WIDTH // 2 - warning.get_width() // 2, HEIGHT // 2 + 80))
+                         (WIDTH // 2 - warning.get_width() // 2, HEIGHT // 2 + 80))
         
         # Timer
         time_left = self.transition_duration - self.transition_timer
         timer_text = small_font.render(f"Comenzando en: {int(time_left) + 1}", True, WHITE)
         self.screen.blit(timer_text, 
-                        (WIDTH // 2 - timer_text.get_width() // 2, HEIGHT // 2 + 130))
+                         (WIDTH // 2 - timer_text.get_width() // 2, HEIGHT // 2 + 130))
     
     def draw_game_over(self):
         """Dibuja pantalla de game over"""

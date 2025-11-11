@@ -118,3 +118,34 @@ PLAYER_SPRITE = "assets/attacks/rock.png"  # Roca como proyectil
 # IA
 AI_ANALYSIS_INTERVAL = 3.0
 AI_STATE_CHANGE_THRESHOLD = 0.3
+
+# Configuración global que puede cambiar el menú
+GAME_CONFIG = {
+    "difficulty": "normal",  # 'easy', 'normal', 'hard'
+    "telegraph_enabled": True,
+    "sound_enabled": True,
+    "music_enabled": True,
+    "show_hitboxes": False
+}
+
+# Modificadores de dificultad
+DIFFICULTY_MODIFIERS = {
+    "easy": {
+        "player_hp_mult": 1.25,
+        "boss_hp_mult": 0.8,
+        "boss_speed_mult": 0.8,
+        "boss_damage_mult": 0.75
+    },
+    "normal": {
+        "player_hp_mult": 1.0,
+        "boss_hp_mult": 1.0,
+        "boss_speed_mult": 1.0,
+        "boss_damage_mult": 1.0
+    },
+    "hard": {
+        "player_hp_mult": 0.75,
+        "boss_hp_mult": 1.25,
+        "boss_speed_mult": 1.3,
+        "boss_damage_mult": 1.5
+    }
+}

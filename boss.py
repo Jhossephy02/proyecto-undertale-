@@ -8,20 +8,31 @@ from settings import *
 from attack_patterns import AttackPattern
 
 class Boss:
-    def __init__(self, x, y, ai_brain, phase=1):
+    # Constructor: Acepta 'difficulty_mod' y inicializa 'dialogue_timer'
+    def __init__(self, x, y, ai_brain, phase=1, difficulty_mod=None): 
         self.x = x
         self.y = y
         self.phase = phase
         self.phase_config = BOSS_PHASES[phase]
         
-        self.hp = self.phase_config["hp"]
-        self.max_hp = self.phase_config["hp"]
-        self.speed_multiplier = self.phase_config["speed_base"]
-        self.damage_multiplier = self.phase_config["damage_base"]
+        # --- APLICACIÓN DE DIFICULTAD ---
+        mod = difficulty_mod if difficulty_mod else DIFFICULTY_MODIFIERS["normal"]
+        
+        self.hp = int(self.phase_config["hp"] * mod["boss_hp_mult"])
+        self.max_hp = self.hp
+        self.speed_multiplier = self.phase_config["speed_base"] * mod["boss_speed_mult"]
+        self.damage_multiplier = self.phase_config["damage_base"] * mod["boss_damage_mult"]
         self.name = self.phase_config["name"]
         
+        # Estado, IA y Timer de Diálogo
         self.state = "tranquilo"
         self.ai = ai_brain
+        self.dialogue_timer = 0 
+        self.dialogues = self.get_dialogues_for_phase()
+        self.current_dialogue = ""
+        
+        # Almacenar el modificador para los bosses revividos
+        self.difficulty_mod = mod 
         
         # Sprites
         self.sprites = {}
@@ -42,13 +53,7 @@ class Boss:
         self.can_revive = self.phase_config.get("can_revive", False)
         self.has_revived_phase1 = False
         self.has_revived_phase2 = False
-        self.revived_bosses = []
-        
-        # Diálogos por fase
-        self.dialogues = self.get_dialogues_for_phase()
-        self.current_dialogue = ""
-        self.dialogue_timer = 0
-        
+    
     def get_dialogues_for_phase(self):
         """Retorna diálogos según la fase"""
         if self.phase == 1:
@@ -124,25 +129,35 @@ class Boss:
         
         revived = []
         
-        # Revivir Boss Fase 1 (solo una vez)
+        # Posición y nivel de dificultad a pasar
+        revive_y = self.y 
+        mod = self.difficulty_mod
+        
+        # Revivir Boss Fase 1
         if not self.has_revived_phase1:
-            boss1 = Boss(self.x - 150, self.y + 100, self.ai, phase=1)
+            # Pasar difficulty_mod al boss revivido
+            boss1 = Boss(self.x - 150, revive_y, self.ai, phase=1, difficulty_mod=mod) 
             boss1.hp = boss1.max_hp // 2  # Mitad de HP
             revived.append(boss1)
             self.has_revived_phase1 = True
             print("¡Boss Fase 1 revivido!")
         
-        # Revivir Boss Fase 2 (solo una vez)
+        # Revivir Boss Fase 2
         if not self.has_revived_phase2 and self.hp < self.max_hp * 0.3:
-            boss2 = Boss(self.x + 150, self.y + 100, self.ai, phase=2)
+            # Pasar difficulty_mod al boss revivido
+            boss2 = Boss(self.x + 150, revive_y, self.ai, phase=2, difficulty_mod=mod) 
             boss2.hp = boss2.max_hp // 2  # Mitad de HP
             revived.append(boss2)
             self.has_revived_phase2 = True
             print("¡Boss Fase 2 revivido!")
         
         return revived
-    
+
+    # MÉTODO UPDATE (CORREGIDO DE INDENTACIÓN Y LÓGICA)
     def update(self, dt, player):
+        # 1. El temporizador debe avanzar por tiempo de juego.
+        self.dialogue_timer += dt
+        
         self.rotation += dt * 2
         
         # Actualizar estado
@@ -173,9 +188,7 @@ class Boss:
             boss_rect = pygame.Rect(self.x - 40, self.y - 40, 80, 80)
             if bullet.get_rect().colliderect(boss_rect):
                 self.take_damage(bullet.damage)
-                bullet.active = False
-                if bullet in self.bullets:
-                    self.bullets.remove(bullet)
+                bullet.active = False 
         
         # Colisiones con ataques especiales
         for special in player.special_attacks[:]:
@@ -195,10 +208,10 @@ class Boss:
             self.attack_timer = 0
             self.show_dialogue()
         
-        # Actualizar diálogo
+        # Decrementar Diálogo (Tiempo visible del cuadro de texto)
         if self.dialogue_timer > 0:
             self.dialogue_timer -= dt
-    
+        
     def attack(self, player):
         """Genera ataques según fase y estado"""
         state_config = BOSS_STATES[self.state]
@@ -339,7 +352,7 @@ class Boss:
             bullet.draw(screen)
         
         # Diálogo
-        if self.dialogue_timer > 0:
+        if self.dialogue_timer > 0 and self.current_dialogue: # Agregamos verificación de self.current_dialogue
             font = pygame.font.Font(None, 24)
             text = font.render(self.current_dialogue, True, WHITE)
             text_rect = text.get_rect(center=(self.x, self.y - 80))
