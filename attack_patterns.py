@@ -1,4 +1,4 @@
-# attack_patterns.py - Patrones de ataque con láser y advertencias
+# attack_patterns.py - Patrones de ataque con láser corregido
 
 import pygame
 import math
@@ -19,7 +19,7 @@ class Warning:
         self.duration = duration
         self.timer = 0
         self.active = True
-        self.color = (255, 0, 0, 100)  # Rojo semi-transparente
+        self.color = (255, 0, 0, 100)
         
     def update(self, dt):
         self.timer += dt
@@ -28,19 +28,17 @@ class Warning:
     
     def draw(self, screen):
         if self.active:
-            # Efecto de parpadeo
             alpha = int(128 + 127 * math.sin(self.timer * 10))
             surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
             surface.fill((255, 0, 0, alpha))
             screen.blit(surface, (int(self.x), int(self.y)))
             
-            # Borde rojo
-            pygame.draw.rect(screen, RED, (int(self.x), int(self.y), 
+            pygame.draw.rect(screen, (255, 0, 0), (int(self.x), int(self.y), 
                                           int(self.width), int(self.height)), 3)
 
 class LaserBeam:
-    """Láser devastador de Yacumama"""
-    def __init__(self, x, y, angle, width=30, length=1000, charge_time=1.0):
+    """Láser devastador de Yacumama - CORREGIDO"""
+    def __init__(self, x, y, angle, width=30, length=1000, charge_time=1.5):
         self.x = x
         self.y = y
         self.angle = angle
@@ -50,19 +48,16 @@ class LaserBeam:
         self.timer = 0
         self.active = True
         self.firing = False
-        self.duration = 2.0  # Duración del disparo
+        self.duration = 3.0  # Duración del disparo aumentada
         
     def update(self, dt):
         self.timer += dt
         
         if self.timer < self.charge_time:
-            # Fase de carga
             self.firing = False
         elif self.timer < self.charge_time + self.duration:
-            # Fase de disparo
             self.firing = True
         else:
-            # Terminar
             self.active = False
     
     def check_collision(self, player_rect):
@@ -70,19 +65,11 @@ class LaserBeam:
         if not self.firing:
             return False
         
-        # Crear rectángulo del láser
         end_x = self.x + math.cos(self.angle) * self.length
         end_y = self.y + math.sin(self.angle) * self.length
         
-        # Puntos del rectángulo del láser
-        perp_angle = self.angle + math.pi / 2
-        offset_x = math.cos(perp_angle) * self.width / 2
-        offset_y = math.sin(perp_angle) * self.width / 2
-        
-        # Verificar si el jugador está en la línea del láser (simplificado)
         player_center = player_rect.center
         
-        # Distancia del jugador a la línea del láser
         dx = end_x - self.x
         dy = end_y - self.y
         length_sq = dx * dx + dy * dy
@@ -105,17 +92,22 @@ class LaserBeam:
         if not self.firing and self.timer < self.charge_time:
             # Advertencia durante la carga
             charge_percent = self.timer / self.charge_time
-            warning_width = int(self.width * (0.5 + charge_percent))
+            warning_width = int(self.width * (0.5 + charge_percent * 0.5))
             
             end_x = self.x + math.cos(self.angle) * self.length
             end_y = self.y + math.sin(self.angle) * self.length
             
-            # Línea de advertencia parpadeante
-            alpha = int(100 + 155 * math.sin(self.timer * 15))
+            # Línea de advertencia parpadeante - COLOR CORREGIDO
+            alpha = int(100 + 100 * math.sin(self.timer * 15))
+            # Asegurar que alpha esté en rango 0-255
+            alpha = max(0, min(255, alpha))
+            color = (255, 255 - alpha, 0)  # Ahora el color es válido
+            
             for i in range(3):
                 offset = i * 2
-                pygame.draw.line(screen, (255, 255 - alpha, 0), 
-                               (self.x, self.y), (end_x, end_y), 
+                pygame.draw.line(screen, color, 
+                               (int(self.x), int(self.y)), 
+                               (int(end_x), int(end_y)), 
                                warning_width + offset)
         
         elif self.firing:
@@ -123,20 +115,25 @@ class LaserBeam:
             end_x = self.x + math.cos(self.angle) * self.length
             end_y = self.y + math.sin(self.angle) * self.length
             
-            # Núcleo blanco brillante
-            pygame.draw.line(screen, WHITE, (self.x, self.y), 
-                           (end_x, end_y), int(self.width * 0.5))
+            # Borde exterior púrpura
+            pygame.draw.line(screen, (128, 0, 255), 
+                           (int(self.x), int(self.y)), 
+                           (int(end_x), int(end_y)), 
+                           int(self.width * 1.8))
             
             # Aura azul
-            pygame.draw.line(screen, CYAN, (self.x, self.y), 
-                           (end_x, end_y), self.width)
+            pygame.draw.line(screen, (0, 200, 255), 
+                           (int(self.x), int(self.y)), 
+                           (int(end_x), int(end_y)), 
+                           self.width)
             
-            # Borde exterior púrpura
-            pygame.draw.line(screen, PURPLE, (self.x, self.y), 
-                           (end_x, end_y), int(self.width * 1.5))
+            # Núcleo blanco brillante
+            pygame.draw.line(screen, (255, 255, 255), 
+                           (int(self.x), int(self.y)), 
+                           (int(end_x), int(end_y)), 
+                           int(self.width * 0.4))
 
 class Bullet:
-    # Cache de sprites cargados
     _sprite_cache = {}
     
     def __init__(self, x, y, angle, speed, color=(255,255,255), bullet_type="normal", sprite_name=None):
@@ -157,7 +154,6 @@ class Bullet:
             self.load_sprite(sprite_name)
     
     def load_sprite(self, sprite_name):
-        """Carga y cachea el sprite"""
         if sprite_name in Bullet._sprite_cache:
             self.original_sprite = Bullet._sprite_cache[sprite_name]
         else:
@@ -175,7 +171,7 @@ class Bullet:
                         Bullet._sprite_cache[sprite_name] = img
                         self.original_sprite = img
                     except:
-                        print(f"Error cargando sprite: {sprite_path}")
+                        pass
         
         if self.original_sprite:
             angle_degrees = math.degrees(-self.angle)
@@ -217,21 +213,18 @@ class Bullet:
 class AttackPattern:
     @staticmethod
     def create_laser_warning(x, y, angle, length=1000, width=30):
-        """Crea advertencia visual para el láser"""
         end_x = x + math.cos(angle) * length
         end_y = y + math.sin(angle) * length
         
-        # Calcular rectángulo de advertencia
         min_x = min(x, end_x) - width
         min_y = min(y, end_y) - width
         max_x = max(x, end_x) + width
         max_y = max(y, end_y) + width
         
-        return Warning(min_x, min_y, max_x - min_x, max_y - min_y, duration=1.0)
+        return Warning(min_x, min_y, max_x - min_x, max_y - min_y, duration=1.5)
     
     @staticmethod
     def circle_burst(x, y, count, speed, color=(255,255,255)):
-        """Explosión circular de FLECHAS"""
         bullets = []
         angle_step = (2 * math.pi) / count
         for i in range(count):
@@ -241,13 +234,11 @@ class AttackPattern:
     
     @staticmethod
     def aimed_shot(x, y, target_x, target_y, speed, color=(255,255,255)):
-        """Disparo directo de FLECHA"""
         angle = math.atan2(target_y - y, target_x - x)
         return [Bullet(x, y, angle, speed, color, "normal", "flechas")]
     
     @staticmethod
     def triple_aimed_shot(x, y, target_x, target_y, speed, color=(255,255,255)):
-        """Tres SERPIENTES hacia el jugador"""
         angle = math.atan2(target_y - y, target_x - x)
         spread = 0.3
         bullets = []
@@ -258,7 +249,6 @@ class AttackPattern:
     
     @staticmethod
     def spiral(x, y, count, speed, rotation, color=(255,255,255)):
-        """Espiral de SERPIENTES"""
         bullets = []
         angle_step = (2 * math.pi) / count
         for i in range(count):
@@ -268,7 +258,6 @@ class AttackPattern:
     
     @staticmethod
     def water_stream(x, y, target_x, target_y, speed, color=(255,255,255)):
-        """Chorro de agua (Yacuruna)"""
         angle = math.atan2(target_y - y, target_x - x)
         bullets = []
         for i in range(5):
@@ -279,7 +268,6 @@ class AttackPattern:
     
     @staticmethod
     def poison_rain(start_x, start_y, speed, color=(255,255,255)):
-        """Lluvia de VENENO (Chullachaqui)"""
         bullets = []
         for i in range(20):
             x = start_x + random.randint(-200, 200)
@@ -290,7 +278,6 @@ class AttackPattern:
     
     @staticmethod
     def wave_attack(start_x, start_y, speed, color=(255,255,255)):
-        """Ola de LIANAS"""
         bullets = []
         for i in range(12):
             x = start_x + i * 40
@@ -299,7 +286,6 @@ class AttackPattern:
     
     @staticmethod
     def liana_curtain(start_x, start_y, speed, color=(255,255,255)):
-        """Cortina de LIANAS (Yacumama)"""
         bullets = []
         spacing = 50
         num_columns = ARENA_WIDTH // spacing
@@ -311,7 +297,6 @@ class AttackPattern:
     
     @staticmethod
     def random_spray(x, y, count, speed, color=(255,255,255)):
-        """Spray aleatorio de PIRAÑAS"""
         bullets = []
         for _ in range(count):
             angle = random.uniform(0, 2 * math.pi)
