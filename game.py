@@ -1,4 +1,4 @@
-# game.py - Loop principal con diálogos en Shipibo-Conibo
+# game.py - Loop principal con intro, menú de modos y 3 bosses
 
 import pygame
 import sys
@@ -9,7 +9,6 @@ from ai_brain import AIBrain
 from core.input_handler import InputHandler
 from core.sound_manager import SoundManager
 from menu import MainMenu, SettingsMenu, IntroScreen
-from dialogue_system import DialogueBox, get_dialogue
 
 
 class Game:
@@ -19,15 +18,17 @@ class Game:
         pygame.display.set_caption("BOSS FIGHT - Leyendas de la Selva")
         self.clock = pygame.time.Clock()
         
-        self.current_state = "INTRO"
+        # Estados de juego
+        self.current_state = "INTRO"  # Comienza con intro
         self.running = True
         self.config = GAME_CONFIG.copy()
         
+        # Inicializar pantallas
         self.intro_screen = IntroScreen(self.screen)
         self.main_menu = MainMenu(self.screen)
         self.settings_menu = SettingsMenu(self.screen, self.config)
-        self.dialogue_box = DialogueBox(self.screen)
         
+        # Componentes del juego
         self.player = None
         self.boss = None
         self.input_handler = None
@@ -44,6 +45,7 @@ class Game:
             print("No se pudo cargar la música de fondo")
 
     def start_game(self, game_mode):
+        """Inicializa el juego con el modo seleccionado"""
         try:
             self.current_state = "GAME"
             self.config["game_mode"] = game_mode
@@ -52,17 +54,21 @@ class Game:
             self.sound_manager = SoundManager()
             self.ai_brain = AIBrain()
             
+            # Aplicar modificadores del modo
             mod = GAME_MODE_MODIFIERS[game_mode]
             
+            # Jugador
             base_hp = int(PLAYER_HP * mod["player_hp_mult"])
             self.player = Player(ARENA_X + ARENA_WIDTH // 2, ARENA_Y + ARENA_HEIGHT // 2)
             self.player.max_hp = base_hp
             self.player.hp = base_hp
             
+            # Boss (Fase 1: Yacuruna)
             self.current_phase = 1
             self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase, difficulty_mod=mod) 
             self.revived_bosses = []
             
+            # Timers y estados
             self.game_time = 0
             self.ai_analysis_timer = 0
             self.game_over = False
@@ -71,6 +77,7 @@ class Game:
             self.transition_timer = 0
             self.transition_duration = 3.0
             
+            # Estadísticas
             self.stats = {
                 "damage_dealt": 0,
                 "damage_taken": 0,
@@ -83,10 +90,6 @@ class Game:
             self.transition_message = ""
             self.show_phase_message = False
             self.phase_message_timer = 0
-            
-            # Mostrar diálogo de introducción del primer boss
-            shipibo, spanish = get_dialogue("yacuruna", "intro")
-            self.dialogue_box.show(shipibo, spanish, "YACURUNA")
             
             print(f"✓ Juego iniciado en modo: {game_mode.upper()}")
         except Exception as e:
@@ -105,10 +108,12 @@ class Game:
                     self.intro_screen.update(dt)
                     self.intro_screen.draw()
                     
+                    # Saltar intro con cualquier tecla
                     for event in events:
                         if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                             self.intro_screen.skip()
                     
+                    # Terminar intro
                     if self.intro_screen.finished:
                         self.current_state = "MENU"
                 
@@ -131,6 +136,7 @@ class Game:
                     if action == "back":
                         self.current_state = "MENU"
                     
+                    # Actualizar música
                     if self.config["music_enabled"] and not pygame.mixer.music.get_busy():
                         try:
                             pygame.mixer.music.play(-1)
@@ -142,25 +148,16 @@ class Game:
                     self.settings_menu.draw()
                 
                 elif self.current_state == "GAME":
-                    # Verificar si hay diálogo activo
-                    if self.dialogue_box.active:
-                        if self.dialogue_box.update(events):
-                            # Diálogo completado, continuar juego
-                            pass
-                        self.draw()  # Dibujar el juego de fondo
-                        self.dialogue_box.draw()  # Dibujar diálogo encima
-                    else:
-                        # Juego normal
-                        self.game_time += dt
-                        self.handle_events_game(events)
+                    self.game_time += dt
+                    self.handle_events_game(events)
+                
+                    if not self.game_over:
+                        if not self.phase_transition:
+                            self.update(dt)
+                        else:
+                            self.update_transition(dt)
                     
-                        if not self.game_over:
-                            if not self.phase_transition:
-                                self.update(dt)
-                            else:
-                                self.update_transition(dt)
-                        
-                        self.draw()
+                    self.draw()
                 
                 pygame.display.flip()
             
@@ -179,7 +176,8 @@ class Game:
                 self.running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if self.current_state == "GAME" and not self.dialogue_box.active:
+                    if self.current_state == "GAME":
+                        # Pausa o regreso al menú
                         self.current_state = "MENU"
                     elif self.current_state == "SETTINGS":
                         self.current_state = "MENU"
@@ -201,19 +199,25 @@ class Game:
         prev_boss_hp = self.boss.hp
         prev_player_hp = self.player.hp
         
+        # Actualizar jugador
         self.player.update(dt, keys)
+        
+        # Actualizar boss principal
         self.boss.update(dt, self.player)
         
+        # Actualizar bosses revividos
         for revived_boss in self.revived_bosses[:]:
             revived_boss.update(dt, self.player)
             if revived_boss.hp <= 0:
                 self.revived_bosses.remove(revived_boss)
-                print(f"{revived_boss.name} espíritu eliminado")
+                print(f"{revived_boss.name} eliminado")
 
+        # Combinar balas de bosses revividos
         for revived_boss in self.revived_bosses:
             self.boss.bullets.extend(revived_boss.bullets)
             revived_boss.bullets.clear()
         
+        # Estadísticas
         damage_to_boss = prev_boss_hp - self.boss.hp
         damage_to_player = prev_player_hp - self.player.hp
         if damage_to_boss > 0:
@@ -221,37 +225,30 @@ class Game:
         if damage_to_player > 0:
             self.stats["damage_taken"] += damage_to_player
         
+        # Análisis IA
         self.ai_analysis_timer += dt
         if self.ai_analysis_timer >= AI_ANALYSIS_INTERVAL:
             self.ai_brain.analyze_player(self.player, self.game_time)
             self.ai_brain.analyze_movement_pattern(self.player, self.game_time)
             self.ai_analysis_timer = 0
         
-        # Resurrección de Yacumama (25% HP y solo una vez)
+        # Resurrección (solo Yacumama al 25% HP)
         if self.current_phase == 3 and self.boss.hp < self.boss.max_hp * 0.25:
-            if not self.boss.has_revived:
-                # Mostrar diálogo de resurrección
-                shipibo, spanish = get_dialogue("yacumama", "revival")
-                self.dialogue_box.show(shipibo, spanish, "YACUMAMA")
-                
-                new_bosses = self.boss.start_revival_sequence()
-                if new_bosses:
-                    self.revived_bosses.extend(new_bosses)
-                    if self.config["sound_enabled"]:
-                        try:
-                            revival_sound = pygame.mixer.Sound("assets/sounds/trueno.mp3")
-                            revival_sound.play()
-                        except:
-                            pass
+            new_bosses = self.boss.revive_previous_bosses()
+            if new_bosses:
+                self.revived_bosses.extend(new_bosses)
+                # Sonidos de resurrección
+                if self.config["sound_enabled"]:
+                    try:
+                        revival_sound = pygame.mixer.Sound("assets/sounds/trueno.mp3")
+                        revival_sound.play()
+                    except:
+                        pass
         
         # Verificar derrota del boss
         if self.boss.hp <= 0:
             if self.current_phase < 3:
-                # Mostrar diálogo de derrota
-                boss_name = self.boss.name.lower()
-                shipibo, spanish = get_dialogue(boss_name, "defeat")
-                self.dialogue_box.show(shipibo, spanish, self.boss.name.upper())
-                
+                # Sonido de muerte del boss
                 if self.config["sound_enabled"]:
                     try:
                         if self.current_phase == 1:
@@ -265,9 +262,6 @@ class Game:
                 self.start_phase_transition()
             else:
                 # Victoria final
-                shipibo, spanish = get_dialogue("yacumama", "defeat")
-                self.dialogue_box.show(shipibo, spanish, "YACUMAMA")
-                
                 self.game_over = True
                 self.victory = True
                 self.stats["time"] = self.game_time
@@ -316,6 +310,7 @@ class Game:
         
         mod = GAME_MODE_MODIFIERS[self.config["game_mode"]]
 
+        # Crear nuevo boss
         self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase, difficulty_mod=mod)
         
         if self.config["sound_enabled"]:
@@ -328,13 +323,11 @@ class Game:
             except:
                 pass
         
+        # Resetear jugador
         self.player.reset_for_new_phase()
-        self.revived_bosses.clear()
         
-        # Mostrar diálogo de introducción del nuevo boss
-        boss_name = self.boss.name.lower()
-        shipibo, spanish = get_dialogue(boss_name, "intro")
-        self.dialogue_box.show(shipibo, spanish, self.boss.name.upper())
+        # Limpiar bosses revividos
+        self.revived_bosses.clear()
         
         print(f"¡FASE {self.current_phase} INICIADA: {self.boss.name}!")
     
@@ -346,18 +339,22 @@ class Game:
                          (ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT), 3)
         
         if not self.phase_transition:
+            # Dibujar entidades
             if self.player:
                 self.player.draw(self.screen)
             if self.boss:
                 self.boss.draw(self.screen)
             
+            # Dibujar bosses revividos
             for revived_boss in self.revived_bosses:
                 revived_boss.draw(self.screen)
             
+            # UI
             self.draw_ui()
         else:
             self.draw_phase_transition()
         
+        # Game Over
         if self.game_over:
             self.draw_game_over()
     
@@ -417,14 +414,9 @@ class Game:
         
         # Bosses revividos
         if len(self.revived_bosses) > 0:
-            revived_text = small_font.render(f"Espíritus activos: {len(self.revived_bosses)}", 
+            revived_text = small_font.render(f"Espíritus: {len(self.revived_bosses)}", 
             True, PURPLE)
             self.screen.blit(revived_text, (WIDTH - 200, 80))
-        
-        # Indicador de regeneración de Yacumama
-        if self.boss.regenerating:
-            regen_text = small_font.render("¡REGENERANDO!", True, GREEN)
-            self.screen.blit(regen_text, (WIDTH // 2 - 80, 120))
     
     def draw_phase_transition(self):
         overlay = pygame.Surface((WIDTH, HEIGHT))
@@ -464,10 +456,10 @@ class Game:
         y_offset = HEIGHT // 2 - 200
         
         if self.victory:
-            title = font.render("¡YOSHIPINIAI!", True, GOLD)  # Victoria en Shipibo
+            title = font.render("¡VICTORIA!", True, GOLD)
             subtitle = medium_font.render(f"Modo {self.config['game_mode'].upper()} completado 🎉", True, WHITE)
         else:
-            title = font.render("PAKOTIAI", True, RED)  # Derrota en Shipibo
+            title = font.render("DERROTA", True, RED)
             subtitle = medium_font.render(f"Fase alcanzada: {self.current_phase} 💀", True, WHITE)
         
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, y_offset))
@@ -483,7 +475,7 @@ class Game:
                 f"Tiempo: {int(self.stats['time'])} segundos",
                 f"Fases: {self.stats['phases_completed']}/3",
                 f"Daño infligido: {int(self.stats['damage_dealt'])}",
-                f"Esquivos totales: {self.player.total_dodges}",
+                f"Esquivos: {self.player.total_dodges}",
             ]
         else:
             stats_texts = [
