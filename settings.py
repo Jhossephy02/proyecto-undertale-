@@ -1,4 +1,4 @@
-# settings.py - Configuración del juego
+# settings.py - Configuración del juego actualizada
 
 import os
 
@@ -32,58 +32,64 @@ PLAYER_HP = 400
 PLAYER_SHOOT_COOLDOWN = 0.3
 
 # Sistema de poder especial
-SPECIAL_ATTACK_DODGES = 60  # Esquivos necesarios para desbloquear ataque
-SPECIAL_ATTACK_WINDOW = 20.0  # Segundos de duración del modo ataque
-SPECIAL_ATTACK_DAMAGE = 200  # Daño del poder especial
+SPECIAL_ATTACK_DODGES = 60
+SPECIAL_ATTACK_WINDOW = 20.0
+SPECIAL_ATTACK_DAMAGE = 200
 
 # Boss
 BOSS_HP = 300
-BOSS_DAMAGE = 5  # Daño reducido a 5
+BOSS_DAMAGE = 5
 BOSS_STATES = {
     "tranquilo": {
-        "hp_range": (0.66, 1.0),  # 66%-100% HP
-        "speed_mult": 1.0,  # Más rápido desde el inicio
+        "hp_range": (0.66, 1.0),
+        "speed_mult": 1.0,
         "attack_mult": 1.2, 
         "color": GREEN,
-        "sprite": "assets/boss/boos_tranki.png",
         "dialogue": ["Facilito causa 😏", "Muévete ps", "Ta' suave"]
     },
     "furioso": {
-        "hp_range": (0.33, 0.66),  # 33%-66% HP
-        "speed_mult": 1.5,  # Más rápido
+        "hp_range": (0.33, 0.66),
+        "speed_mult": 1.5,
         "attack_mult": 1.8, 
         "color": YELLOW,
-        "sprite": "assets/boss/boos_furioso.png",
         "dialogue": ["¡Ya me picaste! 😤", "¡Ahora sí!", "¡Te agarro!"]
     },
     "enajenado": {
-        "hp_range": (0.0, 0.33),  # 0%-33% HP
-        "speed_mult": 2.2,  # Mucho más rápido
+        "hp_range": (0.0, 0.33),
+        "speed_mult": 2.2,
         "attack_mult": 2.5, 
         "color": RED,
-        "sprite": "assets/boss/boos_enojado.png",
         "dialogue": ["¡TE QUIEBRO! 💀", "¡MUERE! 🔥", "¡YA FUE!"]
     }
 }
 
-# Configuración de los 3 bosses
+# Configuración de los 3 bosses (Yacuruna, Chullachaqui, Yacumama)
 BOSS_PHASES = {
     1: {
-        "name": "Boss Selvático",
+        "name": "Yacuruna",
+        "sprite_normal": "assets/boss/yacuruna-espiritu.png",
+        "sprite_furioso": "assets/boss/yacuruna-espiritu.png",
+        "sprite_enajenado": "assets/boss/yacuruna-espiritu.png",
         "hp": 500,
         "speed_base": 1.0,
         "damage_base": 1.0,
-        "color": GREEN
+        "color": CYAN
     },
     2: {
-        "name": "Boss Furioso",
+        "name": "Chullachaqui",
+        "sprite_normal": "assets/boss/CHULLACHAQUI.png",
+        "sprite_furioso": "assets/boss/Chullachaqui_furioso.png",
+        "sprite_enajenado": "assets/boss/CHULLACHAQUI-ENOJADO.png",
         "hp": 600,
         "speed_base": 1.5,
         "damage_base": 1.5,
-        "color": ORANGE
+        "color": GREEN
     },
     3: {
-        "name": "Boss Supremo",
+        "name": "Yacumama",
+        "sprite_normal": "assets/boss/yacumama.png",
+        "sprite_furioso": "assets/boss/yacumama_furioso.png",
+        "sprite_enajenado": "assets/boss/yacumama-enojado.png",
         "hp": 800,
         "speed_base": 1.3,
         "damage_base": 1.3,
@@ -98,10 +104,6 @@ BULLET_SIZE = 8
 PLAYER_BULLET_SPEED = 8
 PLAYER_BULLET_DAMAGE = 20
 
-# Aceleración progresiva del juego
-SPEED_INCREASE_PER_BOSS = 0.20  # 20% más rápido por cada boss
-SPEED_INCREASE_PER_20_SEC = 0.10  # 10% más rápido cada 20 segundos
-
 # Assets paths
 ATTACK_SPRITES = {
     "flechas": "assets/attacks/flechas.png",
@@ -109,32 +111,35 @@ ATTACK_SPRITES = {
     "piraña": "assets/attacks/piraña.png",
     "serpiente": "assets/attacks/serpiente.png",
     "tronco": "assets/attacks/tronco.png",
-    "veneno": "assets/attacks/veneno.png"
+    "veneno": "assets/attacks/veneno.png",
+    "chorro_agua": "assets/attacks/chorro de agua.png",
+    "ola": "assets/attacks/ola-yacumama.png",
+    "remolino": "assets/attacks/remolino-con-hojas.png"
 }
 
 # Sprite del jugador
-PLAYER_SPRITE = "assets/attacks/rock.png"  # Roca como proyectil
+PLAYER_SPRITE = "assets/player/player.png"
 
 # IA
 AI_ANALYSIS_INTERVAL = 3.0
 AI_STATE_CHANGE_THRESHOLD = 0.3
 
-# Configuración global que puede cambiar el menú
+# Configuración global
 GAME_CONFIG = {
-    "difficulty": "normal",  # 'easy', 'normal', 'hard'
+    "game_mode": "normal",  # 'practica', 'normal', 'genocida'
     "telegraph_enabled": True,
     "sound_enabled": True,
     "music_enabled": True,
     "show_hitboxes": False
 }
 
-# Modificadores de dificultad
-DIFFICULTY_MODIFIERS = {
-    "easy": {
-        "player_hp_mult": 1.25,
-        "boss_hp_mult": 0.8,
-        "boss_speed_mult": 0.8,
-        "boss_damage_mult": 0.75
+# Modificadores de modos de juego
+GAME_MODE_MODIFIERS = {
+    "practica": {
+        "player_hp_mult": 1.5,
+        "boss_hp_mult": 0.7,
+        "boss_speed_mult": 0.7,
+        "boss_damage_mult": 0.6
     },
     "normal": {
         "player_hp_mult": 1.0,
@@ -142,10 +147,14 @@ DIFFICULTY_MODIFIERS = {
         "boss_speed_mult": 1.0,
         "boss_damage_mult": 1.0
     },
-    "hard": {
-        "player_hp_mult": 0.75,
-        "boss_hp_mult": 1.25,
-        "boss_speed_mult": 1.3,
-        "boss_damage_mult": 1.5
+    "genocida": {
+        "player_hp_mult": 0.5,
+        "boss_hp_mult": 1.5,
+        "boss_speed_mult": 1.5,
+        "boss_damage_mult": 2.0
     }
 }
+
+# Advertencias de ataques
+WARNING_DURATION = 1.0
+WARNING_COLOR = (255, 0, 0, 100)

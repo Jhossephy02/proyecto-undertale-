@@ -1,22 +1,21 @@
-# boss.py - Sistema de bosses con 3 fases
+# boss.py - Sistema de bosses: Yacuruna, Chullachaqui, Yacumama
 
 import pygame
 import random
 import os
 import math
 from settings import *
-from attack_patterns import AttackPattern
+from attack_patterns import AttackPattern, LaserBeam, Warning
 
 class Boss:
-    # Constructor: Acepta 'difficulty_mod' y inicializa 'dialogue_timer'
     def __init__(self, x, y, ai_brain, phase=1, difficulty_mod=None): 
         self.x = x
         self.y = y
         self.phase = phase
         self.phase_config = BOSS_PHASES[phase]
         
-        # --- APLICACIÓN DE DIFICULTAD ---
-        mod = difficulty_mod if difficulty_mod else DIFFICULTY_MODIFIERS["normal"]
+        # Aplicar dificultad
+        mod = difficulty_mod if difficulty_mod else GAME_MODE_MODIFIERS["normal"]
         
         self.hp = int(self.phase_config["hp"] * mod["boss_hp_mult"])
         self.max_hp = self.hp
@@ -24,19 +23,17 @@ class Boss:
         self.damage_multiplier = self.phase_config["damage_base"] * mod["boss_damage_mult"]
         self.name = self.phase_config["name"]
         
-        # Estado, IA y Timer de Diálogo
+        # Estado y IA
         self.state = "tranquilo"
         self.ai = ai_brain
         self.dialogue_timer = 0 
         self.dialogues = self.get_dialogues_for_phase()
         self.current_dialogue = ""
         
-        # Almacenar el modificador para los bosses revividos
         self.difficulty_mod = mod 
         
         # Sprites
         self.sprites = {}
-        self.folder = f"boss{phase}" if phase > 1 else "boss"
         self.load_sprites()
         
         # Combate
@@ -49,55 +46,65 @@ class Boss:
         self.hit_flash = 0
         self.shake_offset = [0, 0]
         
-        # Resurrección (solo fase 3)
+        # Resurrección (solo Yacumama)
         self.can_revive = self.phase_config.get("can_revive", False)
         self.has_revived_phase1 = False
         self.has_revived_phase2 = False
-    
+        
+        # Sistema de láser (Yacumama)
+        self.lasers = []
+        self.laser_cooldown = 0
+        self.laser_attack_timer = 0
+        self.warnings = []
+        
+        # Posición de teleport para Yacumama
+        self.teleport_cooldown = 0
+        self.is_teleporting = False
+        
     def get_dialogues_for_phase(self):
-        """Retorna diálogos según la fase"""
-        if self.phase == 1:
+        if self.phase == 1:  # Yacuruna
             return {
-                "tranquilo": ["Facilito causa 😎", "Muévete ps jaja", "Ta' suave nomás"],
-                "furioso": ["¡Ya me picaste! 😤", "¡Ahora sí! 💢", "¡Te voy a atrapar!"],
-                "enajenado": ["¡TE QUEBRO! 💀", "¡MUEREEE! 🔥", "¡YA FUE!"]
+                "tranquilo": ["Soy el espíritu del agua 🌊", "No escaparás", "Guardián de la selva"],
+                "furioso": ["¡Mi poder crece! ⚡", "¡Siente la furia del río!", "¡No te perdonaré!"],
+                "enajenado": ["¡EL RÍO RUGE! 💀", "¡DESAPARECE! 🌊", "¡MI IRA ES INFINITA!"]
             }
-        elif self.phase == 2:
+        elif self.phase == 2:  # Chullachaqui
             return {
-                "tranquilo": ["¿Pensaste que era fácil? 😏", "¡Ahora va en serio!", "Nivel 2 activado"],
-                "furioso": ["¡MÁS RÁPIDO! ⚡", "¡NO ESCAPAS! 💥", "¡TE ALCANZO!"],
-                "enajenado": ["¡MÁXIMA POTENCIA! 🔥", "¡MODO BERSERK! 💢", "¡DESTRUCCIÓN!"]
+                "tranquilo": ["Soy el engañador 👣", "¿Ves mi pie al revés?", "Te perderás en mi selva"],
+                "furioso": ["¡Veneno en tus venas! 💚", "¡Mis ilusiones te consumirán!", "¡MUERE PERDIDO!"],
+                "enajenado": ["¡LOCURA TOTAL! 🍄", "¡TE HUNDIRÉ EN LA SELVA! 💢", "¡SIN SALIDA!"]
             }
-        else:  # Fase 3
+        else:  # Yacumama
             return {
-                "tranquilo": ["Soy el jefe supremo 👑", "Mis aliados volverán", "Poder definitivo"],
-                "furioso": ["¡RESURRECCIÓN! ⚡", "¡Regresen a la batalla!", "¡Juntos somos invencibles!"],
-                "enajenado": ["¡TODO MI PODER! 💀", "¡APOCALIPSIS! 🔥", "¡FIN DEL JUEGO!"]
+                "tranquilo": ["Soy la serpiente gigante 🐍", "Madre de las aguas", "Mi poder es absoluto"],
+                "furioso": ["¡RESURRECCIÓN! ⚡", "¡Mis aliados regresan!", "¡Todos contra ti!"],
+                "enajenado": ["¡LÁSER DEVASTADOR! 💀", "¡TODO MI PODER! 🔥", "¡EL FIN HA LLEGADO!"]
             }
     
     def load_sprites(self):
-        """Carga sprites del boss"""
-        for state, config in BOSS_STATES.items():
-            sprite_path = f"assets/{self.folder}/boos_{state[0]}.png"
-            
-            if not os.path.exists(sprite_path):
-                sprite_path = config["sprite"]
+        states_map = {
+            "tranquilo": "sprite_normal",
+            "furioso": "sprite_furioso",
+            "enajenado": "sprite_enajenado"
+        }
+        
+        for state, config_key in states_map.items():
+            sprite_path = self.phase_config.get(config_key, "")
             
             if os.path.exists(sprite_path):
                 try:
                     img = pygame.image.load(sprite_path).convert_alpha()
                     base_size = 80
-                    # Boss más grande en fases superiores
                     size = base_size + (self.phase - 1) * 10
                     img = pygame.transform.scale(img, (size, size))
                     self.sprites[state] = img
-                except:
+                except Exception as e:
+                    print(f"Error cargando sprite {sprite_path}: {e}")
                     self.sprites[state] = None
             else:
                 self.sprites[state] = None
     
     def take_damage(self, amount):
-        """Recibe daño"""
         adjusted_damage = amount / self.damage_multiplier
         self.hp -= adjusted_damage
         self.hit_flash = 0.2
@@ -111,7 +118,6 @@ class Boss:
         return False
     
     def update_state_by_hp(self):
-        """Actualiza el estado según el HP actual"""
         hp_percent = self.hp / self.max_hp
         
         for state_name, config in BOSS_STATES.items():
@@ -123,41 +129,33 @@ class Boss:
                 break
     
     def revive_previous_bosses(self):
-        """Resucita los bosses anteriores (solo fase 3)"""
         if not self.can_revive:
             return []
         
         revived = []
-        
-        # Posición y nivel de dificultad a pasar
         revive_y = self.y 
         mod = self.difficulty_mod
         
-        # Revivir Boss Fase 1
+        # Revivir Yacuruna (espíritu)
         if not self.has_revived_phase1:
-            # Pasar difficulty_mod al boss revivido
             boss1 = Boss(self.x - 150, revive_y, self.ai, phase=1, difficulty_mod=mod) 
-            boss1.hp = boss1.max_hp // 2  # Mitad de HP
+            boss1.hp = boss1.max_hp // 2
             revived.append(boss1)
             self.has_revived_phase1 = True
-            print("¡Boss Fase 1 revivido!")
+            print("¡Yacuruna revivido como espíritu!")
         
-        # Revivir Boss Fase 2
-        if not self.has_revived_phase2 and self.hp < self.max_hp * 0.3:
-            # Pasar difficulty_mod al boss revivido
+        # Revivir Chullachaqui (espíritu)
+        if not self.has_revived_phase2 and self.hp < self.max_hp * 0.25:
             boss2 = Boss(self.x + 150, revive_y, self.ai, phase=2, difficulty_mod=mod) 
-            boss2.hp = boss2.max_hp // 2  # Mitad de HP
+            boss2.hp = boss2.max_hp // 2
             revived.append(boss2)
             self.has_revived_phase2 = True
-            print("¡Boss Fase 2 revivido!")
+            print("¡Chullachaqui revivido como espíritu!")
         
         return revived
 
-    # MÉTODO UPDATE (CORREGIDO DE INDENTACIÓN Y LÓGICA)
     def update(self, dt, player):
-        # 1. El temporizador debe avanzar por tiempo de juego.
         self.dialogue_timer += dt
-        
         self.rotation += dt * 2
         
         # Actualizar estado
@@ -171,6 +169,22 @@ class Boss:
             self.shake_offset[1] *= 0.9
             if abs(self.shake_offset[0]) < 0.5 and abs(self.shake_offset[1]) < 0.5:
                 self.shake_offset = [0, 0]
+        
+        # Actualizar advertencias
+        for warning in self.warnings[:]:
+            warning.update(dt)
+            if not warning.active:
+                self.warnings.remove(warning)
+        
+        # Actualizar láseres (Yacumama)
+        for laser in self.lasers[:]:
+            laser.update(dt)
+            if not laser.active:
+                self.lasers.remove(laser)
+            elif laser.check_collision(player.get_rect()):
+                damage = 30 * self.damage_multiplier
+                if player.take_damage(damage):
+                    pass
         
         # Actualizar balas
         for bullet in self.bullets[:]:
@@ -208,74 +222,75 @@ class Boss:
             self.attack_timer = 0
             self.show_dialogue()
         
-        # Decrementar Diálogo (Tiempo visible del cuadro de texto)
+        # Ataque especial de láser (Yacumama)
+        if self.phase == 3:
+            self.laser_attack_timer += dt
+            if self.laser_attack_timer >= 5.0 and self.state == "enajenado":
+                self.perform_laser_attack(player)
+                self.laser_attack_timer = 0
+        
+        # Decrementar diálogo
         if self.dialogue_timer > 0:
             self.dialogue_timer -= dt
         
+    def perform_laser_attack(self, player):
+        """Yacumama se teleporta y dispara láser"""
+        # Elegir posición aleatoria fuera del área de combate
+        positions = [
+            (ARENA_X - 60, random.randint(ARENA_Y, ARENA_Y + ARENA_HEIGHT)),  # Izquierda
+            (ARENA_X + ARENA_WIDTH + 60, random.randint(ARENA_Y, ARENA_Y + ARENA_HEIGHT)),  # Derecha
+            (random.randint(ARENA_X, ARENA_X + ARENA_WIDTH), ARENA_Y - 60),  # Arriba
+            (random.randint(ARENA_X, ARENA_X + ARENA_WIDTH), ARENA_Y + ARENA_HEIGHT + 60)  # Abajo
+        ]
+        
+        new_pos = random.choice(positions)
+        self.x, self.y = new_pos
+        
+        # Calcular ángulo hacia el jugador
+        angle = math.atan2(player.y - self.y, player.x - self.x)
+        
+        # Crear advertencia
+        warning = AttackPattern.create_laser_warning(self.x, self.y, angle)
+        self.warnings.append(warning)
+        
+        # Crear láser después de 1 segundo
+        laser = LaserBeam(self.x, self.y, angle)
+        self.lasers.append(laser)
+        
+        print(f"Yacumama dispara láser desde ({self.x}, {self.y})")
+    
     def attack(self, player):
-        """Genera ataques según fase y estado"""
         state_config = BOSS_STATES[self.state]
         speed = BULLET_BASE_SPEED * state_config["speed_mult"] * self.speed_multiplier
         color = self.phase_config["color"]
         
         pred_x, pred_y = self.ai.get_predicted_position(player.x, player.y)
         
-        # Ataques por fase
-        if self.phase == 1:
-            pattern = self.get_phase1_attack(player, pred_x, pred_y, speed, color)
-        elif self.phase == 2:
-            pattern = self.get_phase2_attack(player, pred_x, pred_y, speed, color)
-        else:  # Fase 3
-            pattern = self.get_phase3_attack(player, pred_x, pred_y, speed, color)
+        if self.phase == 1:  # Yacuruna
+            pattern = self.get_yacuruna_attack(player, pred_x, pred_y, speed, color)
+        elif self.phase == 2:  # Chullachaqui
+            pattern = self.get_chullachaqui_attack(player, pred_x, pred_y, speed, color)
+        else:  # Yacumama
+            pattern = self.get_yacumama_attack(player, pred_x, pred_y, speed, color)
         
         self.bullets.extend(pattern)
     
-    def get_phase1_attack(self, player, pred_x, pred_y, speed, color):
-        """Ataques normales fase 1"""
+    def get_yacuruna_attack(self, player, pred_x, pred_y, speed, color):
+        """Ataques de Yacuruna (agua, espíritu)"""
         if self.state == "tranquilo":
             patterns = [
-                AttackPattern.circle_burst(self.x, self.y, 8, speed, color),
-                AttackPattern.aimed_shot(self.x, self.y, player.x, player.y, speed, color),
+                AttackPattern.circle_burst(self.x, self.y, 8, speed, BLUE),
+                AttackPattern.water_stream(self.x, self.y, player.x, player.y, speed, CYAN),
             ]
-            attack_fase_1_tranquilo = pygame.mixer.Sound("assets/sounds/attack_fase_1.mp3")
-            attack_fase_1_tranquilo.play()
         elif self.state == "furioso":
             patterns = [
-                AttackPattern.spiral(self.x, self.y, 12, speed, self.rotation, color),
-                AttackPattern.triple_aimed_shot(self.x, self.y, pred_x, pred_y, speed, color),
+                AttackPattern.spiral(self.x, self.y, 12, speed, self.rotation, CYAN),
+                AttackPattern.water_stream(self.x, self.y, pred_x, pred_y, speed * 1.2, BLUE),
             ]
-            attack_fase_1_furioso = pygame.mixer.Sound("assets/sounds/attack_fase_1_f.mp3")
-            attack_fase_1_furioso.play()
         else:
             patterns = [
-                AttackPattern.circle_burst(self.x, self.y, 16, speed, color),
-                AttackPattern.random_spray(self.x, self.y, 25, speed, color),
-            ]
-        return random.choice(patterns)
-    
-    def get_phase2_attack(self, player, pred_x, pred_y, speed, color):
-        """Ataques más rápidos fase 2"""
-        if self.state == "tranquilo":
-            patterns = [
-                AttackPattern.double_burst(self.x, self.y, 10, speed, color),
-                AttackPattern.wave_attack(ARENA_X, ARENA_Y, speed, color),
-            ]
-            attack_fase_2_tranquilo = pygame.mixer.Sound("assets/sounds/attack_fase_1.mp3")
-            attack_fase_2_tranquilo.play()
-        elif self.state == "furioso":
-            patterns = [
-                AttackPattern.spiral_double(self.x, self.y, 15, speed, self.rotation, color),
-                AttackPattern.pirana_circle(self.x, self.y, 12, speed, color),
-                AttackPattern.converging_attack(player.x, player.y, speed * 1.2, color),
-            ]
-            attack_fase_2_furioso = pygame.mixer.Sound("assets/sounds/attack_fase_1_f.mp3")
-            attack_fase_2_furioso.play()
-        else:
-            patterns = [
-                AttackPattern.laser_grid(ARENA_X, ARENA_Y, speed, color),
-                AttackPattern.random_spray(self.x, self.y, 40, speed, color),
-                [*AttackPattern.wall(ARENA_X + ARENA_WIDTH // 2, ARENA_Y, True, 12, speed, 25, color),
-                 *AttackPattern.circle_burst(self.x, self.y, 20, speed, color)]
+                [*AttackPattern.circle_burst(self.x, self.y, 16, speed, BLUE),
+                 *AttackPattern.water_stream(self.x, self.y, player.x, player.y, speed, CYAN)],
             ]
         
         pattern = random.choice(patterns)
@@ -283,29 +298,48 @@ class Boss:
             pattern = [bullet for sublist in pattern for bullet in sublist]
         return pattern
     
-    def get_phase3_attack(self, player, pred_x, pred_y, speed, color):
-        """Ataques supremos fase 3"""
+    def get_chullachaqui_attack(self, player, pred_x, pred_y, speed, color):
+        """Ataques de Chullachaqui (veneno, confusión)"""
         if self.state == "tranquilo":
             patterns = [
-                AttackPattern.spiral_double(self.x, self.y, 18, speed, self.rotation, color),
-                AttackPattern.liana_curtain(ARENA_X, ARENA_Y - 50, speed, color),
+                AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed, GREEN),
+                AttackPattern.triple_aimed_shot(self.x, self.y, pred_x, pred_y, speed, GREEN),
             ]
-            attack_fase_3_tranquilo = pygame.mixer.Sound("assets/sounds/trueno.mp3")
-            attack_fase_3_tranquilo.play()
         elif self.state == "furioso":
             patterns = [
-                [*AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed, color),
-                 *AttackPattern.snake_wave(ARENA_X, ARENA_Y, speed, color)],
-                [*AttackPattern.pirana_circle(self.x, self.y, 15, speed, color),
-                 *AttackPattern.converging_attack(pred_x, pred_y, speed * 1.3, color)],
+                AttackPattern.spiral(self.x, self.y, 15, speed, self.rotation, GREEN),
+                [*AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed, GREEN),
+                 *AttackPattern.circle_burst(self.x, self.y, 12, speed, GREEN)],
             ]
         else:
             patterns = [
-                [*AttackPattern.laser_grid(ARENA_X, ARENA_Y, speed, color),
-                 *AttackPattern.circle_burst(self.x, self.y, 24, speed, color)],
-                [*AttackPattern.random_spray(self.x, self.y, 50, speed, color),
-                 *AttackPattern.wall(ARENA_X + ARENA_WIDTH // 2, ARENA_Y, True, 15, speed, 20, color),
-                 *AttackPattern.wall(ARENA_X + ARENA_WIDTH // 2, ARENA_Y, False, 15, speed, 20, color)],
+                [*AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed * 1.2, GREEN),
+                 *AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed * 1.2, GREEN)],
+            ]
+        
+        pattern = random.choice(patterns)
+        if isinstance(pattern, list) and pattern and isinstance(pattern[0], list):
+            pattern = [bullet for sublist in pattern for bullet in sublist]
+        return pattern
+    
+    def get_yacumama_attack(self, player, pred_x, pred_y, speed, color):
+        """Ataques de Yacumama (serpiente gigante, agua)"""
+        if self.state == "tranquilo":
+            patterns = [
+                AttackPattern.spiral(self.x, self.y, 18, speed, self.rotation, PURPLE),
+                AttackPattern.wave_attack(ARENA_X, ARENA_Y - 50, speed, PURPLE),
+            ]
+        elif self.state == "furioso":
+            patterns = [
+                [*AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed, PURPLE),
+                 *AttackPattern.water_stream(self.x, self.y, pred_x, pred_y, speed, CYAN)],
+                [*AttackPattern.circle_burst(self.x, self.y, 20, speed, PURPLE),
+                 *AttackPattern.spiral(self.x, self.y, 15, speed, self.rotation, CYAN)],
+            ]
+        else:
+            patterns = [
+                [*AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed, PURPLE),
+                 *AttackPattern.circle_burst(self.x, self.y, 24, speed, PURPLE)],
             ]
         
         pattern = random.choice(patterns)
@@ -314,14 +348,20 @@ class Boss:
         return pattern
     
     def show_dialogue(self):
-        """Muestra diálogo"""
         self.current_dialogue = random.choice(self.dialogues[self.state])
         self.dialogue_timer = 2.0
     
     def draw(self, screen):
-        """Dibuja el boss"""
         draw_x = int(self.x + self.shake_offset[0])
         draw_y = int(self.y + self.shake_offset[1])
+        
+        # Advertencias
+        for warning in self.warnings:
+            warning.draw(screen)
+        
+        # Láseres
+        for laser in self.lasers:
+            laser.draw(screen)
         
         # Sprite
         if self.sprites.get(self.state):
@@ -338,7 +378,6 @@ class Boss:
                            (draw_x - sprite.get_width() // 2, 
                             draw_y - sprite.get_height() // 2))
         else:
-            # Fallback
             color = self.phase_config["color"]
             if self.hit_flash > 0:
                 color = WHITE
@@ -352,7 +391,7 @@ class Boss:
             bullet.draw(screen)
         
         # Diálogo
-        if self.dialogue_timer > 0 and self.current_dialogue: # Agregamos verificación de self.current_dialogue
+        if self.dialogue_timer > 0 and self.current_dialogue:
             font = pygame.font.Font(None, 24)
             text = font.render(self.current_dialogue, True, WHITE)
             text_rect = text.get_rect(center=(self.x, self.y - 80))
@@ -367,7 +406,6 @@ class Boss:
         self.draw_hp_bar(screen)
     
     def draw_hp_bar(self, screen):
-        """Dibuja barra de HP"""
         bar_width = 200
         bar_height = 20
         bar_x = WIDTH // 2 - bar_width // 2
@@ -381,14 +419,12 @@ class Boss:
         hp_color = GREEN if hp_percent > 0.66 else (YELLOW if hp_percent > 0.33 else RED)
         pygame.draw.rect(screen, hp_color, (bar_x, bar_y, hp_bar_width, bar_height))
         
-        # Texto
         font = pygame.font.Font(None, 18)
         phase_text = f"FASE {self.phase} | {int(self.hp)}/{self.max_hp}"
         text_surf = font.render(phase_text, True, WHITE)
         text_rect = text_surf.get_rect(center=(WIDTH // 2, bar_y + bar_height // 2))
         screen.blit(text_surf, text_rect)
         
-        # Nombre del boss
         name_font = pygame.font.Font(None, 24)
         name_surf = name_font.render(self.name, True, BOSS_STATES[self.state]["color"])
         name_rect = name_surf.get_rect(center=(WIDTH // 2, bar_y - 15))
