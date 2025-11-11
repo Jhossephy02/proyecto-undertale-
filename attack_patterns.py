@@ -1,4 +1,4 @@
-# attack_patterns.py - Patrones de ataque con láser corregido
+# attack_patterns.py - Patrones de ataque MEJORADOS con láseres móviles
 
 import pygame
 import math
@@ -37,10 +37,12 @@ class Warning:
                                           int(self.width), int(self.height)), 3)
 
 class LaserBeam:
-    """Láser devastador de Yacumama - CORREGIDO"""
-    def __init__(self, x, y, angle, width=30, length=1000, charge_time=1.5):
+    """Láser devastador de Yacumama - MÓVIL Y MEJORADO"""
+    def __init__(self, x, y, angle, width=30, length=1000, charge_time=1.5, movement_pattern=None):
         self.x = x
         self.y = y
+        self.start_x = x
+        self.start_y = y
         self.angle = angle
         self.width = width
         self.length = length
@@ -48,7 +50,9 @@ class LaserBeam:
         self.timer = 0
         self.active = True
         self.firing = False
-        self.duration = 3.0  # Duración del disparo aumentada
+        self.duration = 2.5  # Duración del disparo
+        self.movement_pattern = movement_pattern  # 'circular', 'sweep', 'zigzag', 'static'
+        self.movement_timer = 0
         
     def update(self, dt):
         self.timer += dt
@@ -57,6 +61,30 @@ class LaserBeam:
             self.firing = False
         elif self.timer < self.charge_time + self.duration:
             self.firing = True
+            self.movement_timer += dt
+            
+            # Movimiento del láser durante el disparo
+            if self.movement_pattern == 'circular':
+                # Rotación circular alrededor del punto de origen
+                rotation_speed = 1.5
+                radius = 80
+                self.x = self.start_x + math.cos(self.movement_timer * rotation_speed) * radius
+                self.y = self.start_y + math.sin(self.movement_timer * rotation_speed) * radius
+                
+            elif self.movement_pattern == 'sweep':
+                # Barrido de lado a lado
+                sweep_speed = 2.0
+                self.angle = self.angle + math.sin(self.movement_timer * sweep_speed) * 0.8
+                
+            elif self.movement_pattern == 'zigzag':
+                # Movimiento en zigzag
+                zigzag_speed = 3.0
+                offset = math.sin(self.movement_timer * zigzag_speed) * 60
+                angle_perpendicular = self.angle + math.pi / 2
+                self.x = self.start_x + math.cos(angle_perpendicular) * offset
+                self.y = self.start_y + math.sin(angle_perpendicular) * offset
+                
+            # 'static' no se mueve
         else:
             self.active = False
     
@@ -97,11 +125,10 @@ class LaserBeam:
             end_x = self.x + math.cos(self.angle) * self.length
             end_y = self.y + math.sin(self.angle) * self.length
             
-            # Línea de advertencia parpadeante - COLOR CORREGIDO
+            # Línea de advertencia parpadeante
             alpha = int(100 + 100 * math.sin(self.timer * 15))
-            # Asegurar que alpha esté en rango 0-255
             alpha = max(0, min(255, alpha))
-            color = (255, 255 - alpha, 0)  # Ahora el color es válido
+            color = (255, 255 - alpha, 0)
             
             for i in range(3):
                 offset = i * 2
@@ -286,13 +313,30 @@ class AttackPattern:
     
     @staticmethod
     def liana_curtain(start_x, start_y, speed, color=(255,255,255)):
+        """Cortina de lianas con ESPACIOS para esquivar"""
+        bullets = []
+        spacing = 60  # Mayor espaciado para poder esquivar
+        num_columns = ARENA_WIDTH // spacing
+        
+        # Patrón: dejar espacios cada 2 columnas
+        for i in range(num_columns):
+            if i % 3 != 1:  # Deja un espacio cada 3 columnas
+                x = ARENA_X + spacing * i + spacing / 2
+                bullets.append(Bullet(x, start_y, math.pi / 2, speed, color, "wave", "lianas"))
+        return bullets
+    
+    @staticmethod
+    def liana_alternating(start_x, start_y, speed, color=(255,255,255)):
+        """Lianas en patrón alternado con más espacios"""
         bullets = []
         spacing = 50
         num_columns = ARENA_WIDTH // spacing
         
+        # Patrón alternado: primero las pares, luego las impares (desfasado en tiempo)
         for i in range(num_columns):
-            x = ARENA_X + spacing * i + spacing / 2
-            bullets.append(Bullet(x, start_y, math.pi / 2, speed, color, "wave", "lianas"))
+            if i % 2 == 0:  # Solo columnas pares
+                x = ARENA_X + spacing * i + spacing / 2
+                bullets.append(Bullet(x, start_y, math.pi / 2, speed, color, "wave", "lianas"))
         return bullets
     
     @staticmethod
