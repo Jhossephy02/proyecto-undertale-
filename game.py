@@ -37,6 +37,10 @@ class Game:
         self.phase_transition = False
         self.transition_timer = 0
         self.transition_duration = 3.0
+
+        pygame.mixer.music.load("assets/sounds/soundtrack_undertale.mp3")
+        pygame.mixer.music.set_volume(0.6)
+        pygame.mixer.music.play(-1)
         
         # Estadísticas
         self.stats = {

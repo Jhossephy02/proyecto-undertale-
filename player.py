@@ -231,6 +231,10 @@ class Player:
         special = SpecialAttack(center_x, center_y)
         self.special_attacks.append(special)
         self.can_use_special = False
+
+        attack_special = pygame.mixer.Sound("assets/sounds/attack_special.mp3")
+        attack_special.play()
+
         print("¡PODER ESPECIAL USADO!")
     
     def clear_bullets(self):
@@ -246,6 +250,9 @@ class Player:
         bullet = PlayerBullet(center_x, center_y, angle)
         self.bullets.append(bullet)
         self.shots_fired += 1
+
+        attack_sound = pygame.mixer.Sound("assets/sounds/shoot_player.mp3")
+        attack_sound.play()
     
     def take_damage(self, amount):
         if not self.invulnerable:
@@ -266,7 +273,7 @@ class Player:
         if self.attack_mode:
             aura_radius = 30 + math.sin(self.attack_mode_timer * 10) * 5
             pygame.draw.circle(screen, GOLD, (int(center_x), int(center_y)), 
-                             int(aura_radius), 2)
+            int(aura_radius), 2)
         
         # Sprite del jugador
         if self.sprite:

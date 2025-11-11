@@ -224,16 +224,22 @@ class Boss:
                 AttackPattern.circle_burst(self.x, self.y, 8, speed, color),
                 AttackPattern.aimed_shot(self.x, self.y, player.x, player.y, speed, color),
             ]
+            attack_fase_1_tranquilo = pygame.mixer.Sound("assets/sounds/attack_fase_1.mp3")
+            attack_fase_1_tranquilo.play()
         elif self.state == "furioso":
             patterns = [
                 AttackPattern.spiral(self.x, self.y, 12, speed, self.rotation, color),
                 AttackPattern.triple_aimed_shot(self.x, self.y, pred_x, pred_y, speed, color),
             ]
+            attack_fase_1_furioso = pygame.mixer.Sound("assets/sounds/attack_fase_1_f.mp3")
+            attack_fase_1_furioso.play()
         else:
             patterns = [
                 AttackPattern.circle_burst(self.x, self.y, 16, speed, color),
                 AttackPattern.random_spray(self.x, self.y, 25, speed, color),
             ]
+            attack_fase_1_furioso = pygame.mixer.Sound("assets/sounds/attack_fase_1_f.mp3")
+            attack_fase_1_furioso.play()
         return random.choice(patterns)
     
     def get_phase2_attack(self, player, pred_x, pred_y, speed, color):
