@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# boss.py - Lógica del jefe con ataques múltiples y rápidos
-=======
 # boss.py - Sistema de bosses con 3 fases
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 import pygame
 import random
@@ -12,15 +8,6 @@ from settings import *
 from attack_patterns import AttackPattern
 
 class Boss:
-<<<<<<< HEAD
-    def __init__(self, x, y, ai_brain, boss_config):
-        self.x = x
-        self.y = y
-        self.max_hp = boss_config["hp"]
-        self.hp = self.max_hp
-        self.name = boss_config["name"]
-        self.folder = boss_config["folder"]
-=======
     def __init__(self, x, y, ai_brain, phase=1):
         self.x = x
         self.y = y
@@ -31,31 +18,26 @@ class Boss:
         self.max_hp = self.phase_config["hp"]
         self.speed_multiplier = self.phase_config["speed_base"]
         self.damage_multiplier = self.phase_config["damage_base"]
+        self.name = self.phase_config["name"]
         
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.state = "tranquilo"
         self.ai = ai_brain
         
         # Sprites
         self.sprites = {}
+        self.folder = f"boss{phase}" if phase > 1 else "boss"
         self.load_sprites()
         
         # Combate
         self.bullets = []
         self.attack_timer = 0
-<<<<<<< HEAD
-        self.attack_cooldown = 1.8  # Más tiempo entre ataques (balanceado)
-=======
         self.attack_cooldown = 2.0 / self.speed_multiplier
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.rotation = 0
         
         # Efectos
         self.hit_flash = 0
         self.shake_offset = [0, 0]
         
-<<<<<<< HEAD
-=======
         # Resurrección (solo fase 3)
         self.can_revive = self.phase_config.get("can_revive", False)
         self.has_revived_phase1 = False
@@ -64,7 +46,6 @@ class Boss:
         
         # Diálogos por fase
         self.dialogues = self.get_dialogues_for_phase()
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.current_dialogue = ""
         self.dialogue_timer = 0
         
@@ -90,11 +71,7 @@ class Boss:
             }
     
     def load_sprites(self):
-<<<<<<< HEAD
-        """Carga los sprites del boss desde su carpeta"""
-=======
         """Carga sprites del boss"""
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         for state, config in BOSS_STATES.items():
             sprite_path = f"assets/{self.folder}/boos_{state[0]}.png"
             
@@ -104,32 +81,20 @@ class Boss:
             if os.path.exists(sprite_path):
                 try:
                     img = pygame.image.load(sprite_path).convert_alpha()
-<<<<<<< HEAD
-                    img = pygame.transform.scale(img, (80, 80))
-                    self.sprites[state] = img
-                except Exception as e:
-                    print(f"Error cargando sprite: {sprite_path} - {e}")
-=======
                     base_size = 80
                     # Boss más grande en fases superiores
                     size = base_size + (self.phase - 1) * 10
                     img = pygame.transform.scale(img, (size, size))
                     self.sprites[state] = img
                 except:
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
                     self.sprites[state] = None
             else:
                 self.sprites[state] = None
     
     def take_damage(self, amount):
-<<<<<<< HEAD
-        """Recibe daño y muestra efectos visuales"""
-        self.hp -= amount
-=======
         """Recibe daño"""
         adjusted_damage = amount / self.damage_multiplier
         self.hp -= adjusted_damage
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.hit_flash = 0.2
         self.shake_offset = [random.randint(-5, 5), random.randint(-5, 5)]
         
@@ -140,7 +105,6 @@ class Boss:
             return True
         return False
     
-<<<<<<< HEAD
     def update_state_by_hp(self):
         """Actualiza el estado según el HP actual"""
         hp_percent = self.hp / self.max_hp
@@ -152,13 +116,7 @@ class Boss:
                     self.state = state_name
                     self.show_dialogue()
                 break
-        
-    def update(self, dt, player, game_phase, speed_multiplier=1.0):
-        """Actualiza el boss (solo ataca en fase DODGE)"""
-        self.rotation += dt * 2
-        
-        # Actualizar efectos visuales
-=======
+    
     def revive_previous_bosses(self):
         """Resucita los bosses anteriores (solo fase 3)"""
         if not self.can_revive:
@@ -191,7 +149,6 @@ class Boss:
         self.state = self.ai.decide_boss_state(player.hp, self.hp, self.dialogue_timer)
         
         # Efectos visuales
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         if self.hit_flash > 0:
             self.hit_flash -= dt
         if self.shake_offset != [0, 0]:
@@ -202,14 +159,10 @@ class Boss:
         
         # Actualizar balas
         for bullet in self.bullets[:]:
-            bullet.update(dt, speed_multiplier)
+            bullet.update(dt, self.speed_multiplier)
             if not bullet.active:
                 self.bullets.remove(bullet)
             elif bullet.get_rect().colliderect(player.get_rect()):
-<<<<<<< HEAD
-                if player.take_damage(BOSS_DAMAGE):
-                    pass
-=======
                 damage = 10 * self.damage_multiplier
                 if player.take_damage(damage):
                     pass
@@ -220,19 +173,10 @@ class Boss:
             boss_rect = pygame.Rect(self.x - 40, self.y - 40, 80, 80)
             if bullet.get_rect().colliderect(boss_rect):
                 self.take_damage(bullet.damage)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
                 bullet.active = False
                 if bullet in self.bullets:
                     self.bullets.remove(bullet)
         
-<<<<<<< HEAD
-        # Solo atacar en fase DODGE
-        if game_phase == "DODGE":
-            self.attack_timer += dt
-            if self.attack_timer >= self.attack_cooldown:
-                self.attack(player, speed_multiplier)
-                self.attack_timer = 0
-=======
         # Colisiones con ataques especiales
         for special in player.special_attacks[:]:
             if not special.has_hit:
@@ -250,53 +194,11 @@ class Boss:
             self.attack(player)
             self.attack_timer = 0
             self.show_dialogue()
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
         # Actualizar diálogo
         if self.dialogue_timer > 0:
             self.dialogue_timer -= dt
     
-<<<<<<< HEAD
-    def attack(self, player, speed_multiplier=1.0):
-        """Genera patrones de ataque múltiples y no predecibles"""
-        state_config = BOSS_STATES[self.state]
-        base_speed = BULLET_BASE_SPEED * state_config["speed_mult"] * speed_multiplier
-        color = state_config["color"]
-        
-        # Obtener predicción mejorada de la IA
-        pred_x, pred_y = self.ai.get_predicted_position(player.x, player.y)
-        
-        if self.state == "tranquilo":
-            # 1-2 patrones simultáneos (más manejable)
-            num_patterns = random.randint(1, 2)
-            patterns = [
-                AttackPattern.circle_burst(self.x, self.y, 8, base_speed, color),
-                AttackPattern.aimed_shot(self.x, self.y, pred_x, pred_y, base_speed * 1.2, color),
-                AttackPattern.cross_pattern(self.x, self.y, base_speed, color),
-            ]
-            
-        elif self.state == "furioso":
-            # 2-3 patrones simultáneos
-            num_patterns = random.randint(2, 3)
-            patterns = [
-                AttackPattern.spiral(self.x, self.y, 12, base_speed, self.rotation, color),
-                AttackPattern.double_burst(self.x, self.y, 10, base_speed, color),
-                AttackPattern.triple_aimed_shot(self.x, self.y, pred_x, pred_y, base_speed, color),
-                AttackPattern.snake_wave(ARENA_X, ARENA_Y, base_speed, color),
-                AttackPattern.pirana_circle(self.x, self.y, 10, base_speed * 0.9, color),
-            ]
-            
-        else:  # enajenado
-            # 3-4 patrones simultáneos (caos controlado)
-            num_patterns = random.randint(3, 4)
-            patterns = [
-                AttackPattern.spiral_double(self.x, self.y, 15, base_speed, self.rotation, color),
-                AttackPattern.random_spray(self.x, self.y, 25, base_speed, color),
-                AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, base_speed * 0.8, color),
-                AttackPattern.converging_attack(pred_x, pred_y, base_speed * 1.2, color),
-                AttackPattern.cross_pattern(self.x, self.y, base_speed * 1.3, color),
-            ]
-=======
     def attack(self, player):
         """Genera ataques según fase y estado"""
         state_config = BOSS_STATES[self.state]
@@ -312,13 +214,8 @@ class Boss:
             pattern = self.get_phase2_attack(player, pred_x, pred_y, speed, color)
         else:  # Fase 3
             pattern = self.get_phase3_attack(player, pred_x, pred_y, speed, color)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
-        # Seleccionar patrones aleatorios sin repetir
-        selected_patterns = random.sample(patterns, min(num_patterns, len(patterns)))
-        
-        for pattern in selected_patterns:
-            self.bullets.extend(pattern)
+        self.bullets.extend(pattern)
     
     def get_phase1_attack(self, player, pred_x, pred_y, speed, color):
         """Ataques normales fase 1"""
@@ -394,24 +291,11 @@ class Boss:
         return pattern
     
     def show_dialogue(self):
-<<<<<<< HEAD
-        """Muestra un diálogo según el estado"""
-        dialogues = BOSS_STATES[self.state]["dialogue"]
-        self.current_dialogue = random.choice(dialogues)
-        self.dialogue_timer = 2.0
-    
-    def clear_bullets(self):
-        """Elimina todas las balas"""
-        self.bullets.clear()
-    
-    def draw(self, screen, game_phase):
-=======
         """Muestra diálogo"""
         self.current_dialogue = random.choice(self.dialogues[self.state])
         self.dialogue_timer = 2.0
     
     def draw(self, screen):
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         """Dibuja el boss"""
         draw_x = int(self.x + self.shake_offset[0])
         draw_y = int(self.y + self.shake_offset[1])
@@ -431,24 +315,6 @@ class Boss:
                            (draw_x - sprite.get_width() // 2, 
                             draw_y - sprite.get_height() // 2))
         else:
-<<<<<<< HEAD
-            # Fallback: círculo
-            color = BOSS_STATES[self.state]["color"]
-            if self.hit_flash > 0:
-                color = WHITE
-            
-            pygame.draw.circle(screen, color, (draw_x, draw_y), 40)
-            pygame.draw.circle(screen, BLACK, (draw_x, draw_y), 40, 3)
-            
-            eye_color = WHITE if self.state != "enajenado" else RED
-            pygame.draw.circle(screen, eye_color, (draw_x - 15, draw_y - 10), 8)
-            pygame.draw.circle(screen, eye_color, (draw_x + 15, draw_y - 10), 8)
-        
-        # Dibujar balas solo en fase DODGE
-        if game_phase == "DODGE":
-            for bullet in self.bullets:
-                bullet.draw(screen)
-=======
             # Fallback
             color = self.phase_config["color"]
             if self.hit_flash > 0:
@@ -461,7 +327,6 @@ class Boss:
         # Balas
         for bullet in self.bullets:
             bullet.draw(screen)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
         # Diálogo
         if self.dialogue_timer > 0:
@@ -475,11 +340,7 @@ class Boss:
             
             screen.blit(text, text_rect)
         
-<<<<<<< HEAD
-        # Barra de HP
-=======
         # Barra HP
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         self.draw_hp_bar(screen)
     
     def draw_hp_bar(self, screen):
@@ -497,16 +358,10 @@ class Boss:
         hp_color = GREEN if hp_percent > 0.66 else (YELLOW if hp_percent > 0.33 else RED)
         pygame.draw.rect(screen, hp_color, (bar_x, bar_y, hp_bar_width, bar_height))
         
-<<<<<<< HEAD
-        font = pygame.font.Font(None, 20)
-        hp_text = f"{int(self.hp)}/{self.max_hp}"
-        text_surf = font.render(hp_text, True, WHITE)
-=======
         # Texto
         font = pygame.font.Font(None, 18)
         phase_text = f"FASE {self.phase} | {int(self.hp)}/{self.max_hp}"
         text_surf = font.render(phase_text, True, WHITE)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         text_rect = text_surf.get_rect(center=(WIDTH // 2, bar_y + bar_height // 2))
         screen.blit(text_surf, text_rect)
         

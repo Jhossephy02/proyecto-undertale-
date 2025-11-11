@@ -23,28 +23,18 @@ YELLOW = (255, 255, 0)
 PURPLE = (200, 0, 200)
 CYAN = (0, 255, 255)
 ORANGE = (255, 165, 0)
-<<<<<<< HEAD
-=======
 GOLD = (255, 215, 0)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 # Player
 PLAYER_SIZE = 20
 PLAYER_SPEED = 5
-PLAYER_HP = 100
+PLAYER_HP = 400
 PLAYER_SHOOT_COOLDOWN = 0.3
 
-<<<<<<< HEAD
-# Sistema de Turnos (como Undertale)
-ATTACK_PHASE_DURATION = 3.0  # 3 segundos para atacar
-DODGE_PHASE_DURATION = 20.0  # 20 segundos para esquivar
-PHASE_TRANSITION_TIME = 1.0   # 1 segundo de transición
-=======
 # Sistema de poder especial
-SPECIAL_ATTACK_DODGES = 100  # Esquivos necesarios para desbloquear ataque
+SPECIAL_ATTACK_DODGES = 60  # Esquivos necesarios para desbloquear ataque
 SPECIAL_ATTACK_WINDOW = 20.0  # Segundos de duración del modo ataque
-SPECIAL_ATTACK_DAMAGE = 150  # Daño del poder especial
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
+SPECIAL_ATTACK_DAMAGE = 200  # Daño del poder especial
 
 # Boss
 BOSS_HP = 300
@@ -76,29 +66,6 @@ BOSS_STATES = {
     }
 }
 
-<<<<<<< HEAD
-# Lista de bosses progresivos
-BOSS_LIST = [
-    {
-        "name": "Boss Selva 1",
-        "hp": 300,
-        "folder": "boss",
-        "intro": "¡Apareció el guardián de la selva!"
-    },
-    {
-        "name": "Boss Selva 2",
-        "hp": 400,
-        "folder": "boss2",
-        "intro": "¡Un enemigo más poderoso aparece!"
-    },
-    {
-        "name": "Boss Selva 3",
-        "hp": 500,
-        "folder": "boss3",
-        "intro": "¡El jefe final te desafía!"
-    }
-]
-=======
 # Configuración de los 3 bosses
 BOSS_PHASES = {
     1: {
@@ -124,7 +91,6 @@ BOSS_PHASES = {
         "can_revive": True
     }
 }
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 # Ataques
 BULLET_BASE_SPEED = 3

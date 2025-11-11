@@ -20,16 +20,13 @@ class Bullet:
         self.speed = speed
         self.size = BULLET_SIZE
         self.color = color
-        self.active = True
         self.bullet_type = bullet_type
         self.lifetime = 0
         self.sprite_name = sprite_name
         self.sprite = None
         self.original_sprite = None
+        self.active = True  # Inicializar como activa
         
-        # Cargar sprite si se especifica
-        if sprite_name:
-            self.load_sprite(sprite_name)
         # Cargar sprite si se especifica
         if sprite_name:
             self.load_sprite(sprite_name)
@@ -78,7 +75,7 @@ class Bullet:
             pass
         elif self.bullet_type == "wave":
             # Movimiento ondulatorio (lianas)
-            self.y += math.sin(self.lifetime * 5) * 2
+            self.y += math.sin(self.lifetime * 5) * 10
         elif self.bullet_type == "spiral":
             # Rotación adicional en espiral
             self.angle += dt * 2
@@ -197,8 +194,8 @@ class AttackPattern:
     def wave_attack(start_x, start_y, speed, color=(255,255,255)):
         """Ola de LIANAS ondulantes desde arriba"""
         bullets = []
-        for i in range(15):
-            x = start_x + i * 30
+        for i in range(12):  # Reducido de 15 a 12 para más abertura
+            x = start_x + i * 40  # Aumentado espaciado de 30 a 40 píxeles
             bullets.append(Bullet(x, start_y, math.pi / 2, speed, color, "wave", "lianas"))
         return bullets
     
@@ -267,6 +264,8 @@ class AttackPattern:
             bullets.append(Bullet(x, start_y, angle, speed, color, "wave", "serpiente"))
         return bullets
     
+    # ... (Código anterior)
+
     @staticmethod
     def poison_rain(start_x, start_y, speed, color=(255,255,255)):
         """Lluvia de VENENO cayendo"""
@@ -275,16 +274,23 @@ class AttackPattern:
             x = start_x + random.randint(-200, 200)
             y = start_y - random.randint(0, 100)
             bullets.append(Bullet(x, y, math.pi / 2, speed * random.uniform(0.8, 1.2), 
-                                color, "normal", "veneno"))
+                                 color, "normal", "veneno"))
         return bullets
     
     @staticmethod
     def liana_curtain(start_x, start_y, speed, color=(255,255,255)):
         """Cortina de LIANAS cayendo en cascada"""
         bullets = []
-        for i in range(10):
-            x = start_x + i * 40
-            for j in range(3):
-                y = start_y - j * 30
-                bullets.append(Bullet(x, y, math.pi / 2, speed, color, "wave", "lianas"))
+        # Definir el rango de columnas (espaciado horizontal)
+        spacing = 50
+        num_columns = ARENA_WIDTH // spacing
+        
+        for i in range(num_columns):
+            # Posición x inicial ajustada al centro del área visible
+            x = ARENA_X + spacing * i + spacing / 2
+            
+            # Crear balas en cada columna
+            # Se usa el tipo "wave" para el movimiento ondulante definido en Bullet.update
+            bullets.append(Bullet(x, start_y, math.pi / 2, speed, color, "wave", "lianas"))
+            
         return bullets

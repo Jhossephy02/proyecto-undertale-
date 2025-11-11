@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# player.py - Lógica del jugador con disparos (ROCA)
-=======
 # player.py - Jugador con sistema de poder especial
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
 
 import pygame
 import math
@@ -46,20 +42,6 @@ class PlayerBullet:
         self.active = True
         self.damage = PLAYER_BULLET_DAMAGE
         
-<<<<<<< HEAD
-        # Cargar sprite de roca
-        self.sprite = None
-        self.load_sprite()
-        
-    def load_sprite(self):
-        """Carga el sprite de la roca"""
-        if os.path.exists(PLAYER_SPRITE):
-            try:
-                img = pygame.image.load(PLAYER_SPRITE).convert_alpha()
-                self.sprite = pygame.transform.scale(img, (24, 24))
-            except:
-                print(f"Error cargando sprite: {PLAYER_SPRITE}")
-=======
         # Cargar sprite
         self.sprite = None
         if os.path.exists(sprite_path):
@@ -70,7 +52,6 @@ class PlayerBullet:
                 self.sprite = pygame.transform.rotate(self.sprite, -angle_deg)
             except:
                 pass
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
     def update(self, dt):
         self.x += math.cos(self.angle) * self.speed
@@ -81,18 +62,10 @@ class PlayerBullet:
     
     def draw(self, screen):
         if self.sprite:
-<<<<<<< HEAD
-            sprite_rect = self.sprite.get_rect(center=(int(self.x), int(self.y)))
-            screen.blit(self.sprite, sprite_rect)
-        else:
-            # Fallback: círculo gris (roca)
-            pygame.draw.circle(screen, (128, 128, 128), (int(self.x), int(self.y)), self.size)
-=======
             rect = self.sprite.get_rect(center=(int(self.x), int(self.y)))
             screen.blit(self.sprite, rect)
         else:
             pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.size)
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
     
     def get_rect(self):
         if self.sprite:
@@ -135,9 +108,6 @@ class Player:
         self.shots_fired = 0
         self.last_movement = {"dx": 0, "dy": 0}
         
-<<<<<<< HEAD
-    def update(self, dt, keys, can_shoot=True):
-=======
     def load_sprite(self, sprite_path):
         """Carga el sprite del jugador"""
         possible_paths = [sprite_path, "assets/player/player.png", "assets/player.png"]
@@ -156,7 +126,6 @@ class Player:
                     print(f"Error cargando sprite: {e}")
     
     def update(self, dt, keys):
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         dx = 0
         dy = 0
         moved = False
@@ -216,13 +185,6 @@ class Player:
                 self.invulnerable = False
                 self.invuln_timer = 0
         
-<<<<<<< HEAD
-        # Sistema de disparo (solo si can_shoot es True)
-        self.shoot_cooldown = max(0, self.shoot_cooldown - dt)
-        if can_shoot and (keys[pygame.K_z] or keys[pygame.K_SPACE]) and self.shoot_cooldown <= 0:
-            self.shoot()
-            self.shoot_cooldown = PLAYER_SHOOT_COOLDOWN
-=======
         # Sistema de disparo (solo en modo ataque)
         self.shoot_cooldown = max(0, self.shoot_cooldown - dt)
         if self.attack_mode:
@@ -233,7 +195,6 @@ class Player:
             # Poder especial con X
             if keys[pygame.K_x] and self.can_use_special:
                 self.use_special_attack()
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         
         # Actualizar balas
         for bullet in self.bullets[:]:
@@ -247,14 +208,6 @@ class Player:
             if not special.active:
                 self.special_attacks.remove(special)
     
-<<<<<<< HEAD
-    def clear_bullets(self):
-        """Elimina todas las balas del jugador"""
-        self.bullets.clear()
-    
-    def shoot(self):
-        """Dispara ROCA hacia arriba (hacia el boss)"""
-=======
     def activate_attack_mode(self):
         """Activa el modo ataque"""
         self.attack_mode = True
@@ -273,7 +226,6 @@ class Player:
     
     def use_special_attack(self):
         """Usa el poder especial"""
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         center_x = self.x + self.size // 2
         center_y = self.y + self.size // 2
         special = SpecialAttack(center_x, center_y)
@@ -316,9 +268,6 @@ class Player:
             pygame.draw.circle(screen, GOLD, (int(center_x), int(center_y)), 
                              int(aura_radius), 2)
         
-<<<<<<< HEAD
-        # Dibujar balas del jugador (rocas)
-=======
         # Sprite del jugador
         if self.sprite:
             current_sprite = self.sprite_invuln if (self.invulnerable and int(self.invuln_timer * 10) % 2 == 0) else self.sprite
@@ -339,7 +288,6 @@ class Player:
             ])
         
         # Balas
->>>>>>> 2b5238c2a1999933b19cc3548f5f28c867526c49
         for bullet in self.bullets:
             bullet.draw(screen)
         
