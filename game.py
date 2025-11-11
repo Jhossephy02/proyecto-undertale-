@@ -39,7 +39,7 @@ class Game:
         self.transition_duration = 3.0
 
         pygame.mixer.music.load("assets/sounds/soundtrack_undertale.mp3")
-        pygame.mixer.music.set_volume(0.6)
+        pygame.mixer.music.set_volume(0.1)
         pygame.mixer.music.play(-1)
         
         # Estadísticas
@@ -128,6 +128,13 @@ class Game:
         # Verificar derrota del boss
         if self.boss.hp <= 0:
             if self.current_phase < 3:
+
+                if self.current_phase == 1:
+                    boss_death_sound = pygame.mixer.Sound("assets/sounds/roar_boss_1.mp3")
+                elif self.current_phase == 2:
+                    boss_death_sound = pygame.mixer.Sound("assets/sounds/roar_muerte_chullachaqui.mp3")
+
+                boss_death_sound.play()
                 self.start_phase_transition()
             else:
                 # Victoria final
@@ -138,6 +145,8 @@ class Game:
                 if self.player.shots_fired > 0:
                     hits = int(self.stats["damage_dealt"] / PLAYER_BULLET_DAMAGE)
                     self.stats["accuracy"] = (hits / self.player.shots_fired) * 100
+                    boss_death_sound = pygame.mixer.Sound("assets/sounds/roar_muerte_yakumama.mp3")
+                    boss_death_sound.play()
         
         # Verificar derrota del jugador
         if self.player.hp <= 0:
@@ -145,6 +154,9 @@ class Game:
             self.victory = False
             self.stats["time"] = self.game_time
             self.stats["phases_completed"] = self.current_phase - 1
+
+            player_death_sound = pygame.mixer.Sound("assets/sounds/derrota.mp3")
+            player_death_sound.play()
     
     def start_phase_transition(self):
         """Inicia la transición a la siguiente fase"""
@@ -168,6 +180,8 @@ class Game:
         
         # Crear nuevo boss
         self.boss = Boss(WIDTH // 2, 100, self.ai_brain, phase=self.current_phase)
+        boss_appear_sound = pygame.mixer.Sound("assets/sounds/roar_inicio_yakuruna.mp3")
+        boss_appear_sound.play()
         
         # Resetear jugador para la nueva fase
         self.player.reset_for_new_phase()
@@ -236,7 +250,7 @@ class Game:
         
         # Contador de esquivos y modo ataque
         dodges_text = small_font.render(f"Esquivos: {self.player.dodges_for_special}/{SPECIAL_ATTACK_DODGES}", 
-                                       True, CYAN if not self.player.attack_mode else GOLD)
+        True, CYAN if not self.player.attack_mode else GOLD)
         self.screen.blit(dodges_text, (20, 80))
         
         # Indicador de modo ataque
@@ -256,13 +270,13 @@ class Game:
         # Instrucciones (primeros segundos)
         if self.game_time < 5:
             controls = small_font.render("WASD: Mover | Z: Disparar (modo ataque) | X: Especial", 
-                                       True, YELLOW)
+            True, YELLOW)
             self.screen.blit(controls, (WIDTH // 2 - 270, HEIGHT - 110))
         
         # Contador de bosses revividos
         if len(self.revived_bosses) > 0:
             revived_text = small_font.render(f"Bosses revividos: {len(self.revived_bosses)}", 
-                                           True, PURPLE)
+            True, PURPLE)
             self.screen.blit(revived_text, (WIDTH - 200, 60))
     
     def draw_phase_transition(self):
@@ -283,7 +297,7 @@ class Game:
         # Siguiente fase
         next_phase = self.current_phase + 1
         next_text = font.render(f"PREPARANDO FASE {next_phase}...", True, 
-                              BOSS_PHASES[next_phase]["color"])
+        BOSS_PHASES[next_phase]["color"])
         self.screen.blit(next_text, 
                         (WIDTH // 2 - next_text.get_width() // 2, HEIGHT // 2)) 
         

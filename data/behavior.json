@@ -1,12 +1,12 @@
 {
   "dodges": {
-    "left": 88,
-    "right": 93,
-    "up": 75,
-    "down": 85
+    "left": 121,
+    "right": 124,
+    "up": 99,
+    "down": 124
   },
-  "hits_taken": 21,
-  "survival_time": 60.15499999999985,
+  "hits_taken": 28,
+  "survival_time": 75.24600000000065,
   "preferred_direction": "right",
   "movement_history": [],
   "dodge_patterns": {},

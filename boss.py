@@ -238,8 +238,6 @@ class Boss:
                 AttackPattern.circle_burst(self.x, self.y, 16, speed, color),
                 AttackPattern.random_spray(self.x, self.y, 25, speed, color),
             ]
-            attack_fase_1_furioso = pygame.mixer.Sound("assets/sounds/attack_fase_1_f.mp3")
-            attack_fase_1_furioso.play()
         return random.choice(patterns)
     
     def get_phase2_attack(self, player, pred_x, pred_y, speed, color):
@@ -249,12 +247,16 @@ class Boss:
                 AttackPattern.double_burst(self.x, self.y, 10, speed, color),
                 AttackPattern.wave_attack(ARENA_X, ARENA_Y, speed, color),
             ]
+            attack_fase_2_tranquilo = pygame.mixer.Sound("assets/sounds/attack_fase_1.mp3")
+            attack_fase_2_tranquilo.play()
         elif self.state == "furioso":
             patterns = [
                 AttackPattern.spiral_double(self.x, self.y, 15, speed, self.rotation, color),
                 AttackPattern.pirana_circle(self.x, self.y, 12, speed, color),
                 AttackPattern.converging_attack(player.x, player.y, speed * 1.2, color),
             ]
+            attack_fase_2_furioso = pygame.mixer.Sound("assets/sounds/attack_fase_1_f.mp3")
+            attack_fase_2_furioso.play()
         else:
             patterns = [
                 AttackPattern.laser_grid(ARENA_X, ARENA_Y, speed, color),
@@ -275,6 +277,8 @@ class Boss:
                 AttackPattern.spiral_double(self.x, self.y, 18, speed, self.rotation, color),
                 AttackPattern.liana_curtain(ARENA_X, ARENA_Y - 50, speed, color),
             ]
+            attack_fase_3_tranquilo = pygame.mixer.Sound("assets/sounds/trueno.mp3")
+            attack_fase_3_tranquilo.play()
         elif self.state == "furioso":
             patterns = [
                 [*AttackPattern.poison_rain(WIDTH // 2, ARENA_Y - 50, speed, color),
