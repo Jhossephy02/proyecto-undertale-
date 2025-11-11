@@ -1,29 +1,29 @@
 {
   "dodges": {
-    "left": 138,
-    "right": 155,
-    "up": 59,
-    "down": 47
+    "left": 21,
+    "right": 27,
+    "up": 13,
+    "down": 23
   },
-  "hits_taken": 26,
-  "survival_time": 72.20400000000038,
+  "hits_taken": 2,
+  "survival_time": 6.026000000000013,
   "preferred_direction": "right",
   "movement_history": [
+    "horizontal",
+    "diagonal",
+    "horizontal",
+    "horizontal",
     "vertical",
     "horizontal",
     "horizontal",
     "horizontal",
     "horizontal",
-    "horizontal",
-    "horizontal",
-    "diagonal",
-    "horizontal",
     "horizontal"
   ],
   "dodge_patterns": {
-    "horizontal": 57,
-    "vertical": 89,
-    "diagonal": 1
+    "horizontal": 68,
+    "vertical": 101,
+    "diagonal": 4
   },
   "reaction_time": 0.5
 }
